@@ -94,7 +94,7 @@ static SDL_GPUGraphicsPipeline* load_shadow(SDL_Window* window)
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
         .vertex_shader = load(device, "shadow.vert", 2, 0),
-        .fragment_shader = load(device, "shadow.frag", 0, 0),
+        .fragment_shader = load(device, "default.frag", 0, 0),
         .target_info =
         {
             .has_depth_stencil_target = 1,
@@ -208,7 +208,7 @@ static SDL_GPUGraphicsPipeline* load_ssao(SDL_Window* window)
 {
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
-        .vertex_shader = load(device, "fullscreen.vert", 0, 0),
+        .vertex_shader = load(device, "default.vert", 0, 0),
         .fragment_shader = load(device, "ssao.frag", 0, 3),
         .target_info =
         {
@@ -251,7 +251,7 @@ static SDL_GPUGraphicsPipeline* load_composite(SDL_Window* window)
 {
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
-        .vertex_shader = load(device, "fullscreen.vert", 0, 0),
+        .vertex_shader = load(device, "default.vert", 0, 0),
         .fragment_shader = load(device, "composite.frag", 3, 6),
         .target_info =
         {

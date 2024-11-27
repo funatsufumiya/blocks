@@ -639,7 +639,7 @@ static void draw()
     }
     if (!color_texture || w == 0 || h == 0)
     {
-        SDL_CancelGPUCommandBuffer(commands);
+        SDL_SubmitGPUCommandBuffer(commands);
         return;
     }
     if (width != w || height != h)

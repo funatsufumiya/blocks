@@ -130,20 +130,33 @@ void noise_generate(
                 group_set_block(group, a, y + 1, b, flowers[value]);
             }
         }
+        if (height > 130)
+        {
+            continue;
+        }
         const float cloud = stb_perlin_turbulence_noise3(
-            s * 0.02f,
+            s * 0.015f,
             0.0f,
-            t * 0.02f,
+            t * 0.015f,
             2.0f,
             0.5f,
             6);
-        if (cloud > 0.4f && 155 > height + 20)
+        int scale = -1;
+        if (cloud > 0.9f)
         {
-            const int scale = cloud * 4;
-            for (int y = -scale; y < scale; y++)
-            {
-                group_set_block(group, a, 155 - y, b, BLOCK_CLOUD);
-            }
+            scale = 2;
+        }
+        else if (cloud > 0.7f)
+        {
+            scale = 1;
+        }
+        else if (cloud > 0.6)
+        {
+            scale = 0;
+        }
+        for (int y = -scale; y <= scale; y++)
+        {
+            group_set_block(group, a, 155 - y, b, BLOCK_CLOUD);
         }
     }
 }

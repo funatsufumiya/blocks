@@ -63,7 +63,6 @@ shader(ssao.frag)
 shader(transparent.frag)
 shader(transparent.vert)
 shader(ui.frag)
-shader(ui.vert)
 
 configure_file(LICENSE.txt ${BINARY_DIR} COPYONLY)
 configure_file(README.md ${BINARY_DIR} COPYONLY)

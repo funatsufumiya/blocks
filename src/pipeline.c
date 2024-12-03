@@ -57,7 +57,7 @@ static SDL_GPUGraphicsPipeline* load_sky(SDL_Window* window)
             .num_color_targets = 1,
             .color_target_descriptions = (SDL_GPUColorTargetDescription[])
             {{
-                .format = SDL_GetGPUSwapchainTextureFormat(device, window)
+                .format = SDL_GPU_TEXTUREFORMAT_R32G32B32A32_FLOAT,
             }},
         },
         .vertex_input_state =
@@ -258,7 +258,7 @@ static SDL_GPUGraphicsPipeline* load_composite(SDL_Window* window)
             .num_color_targets = 1,
             .color_target_descriptions = (SDL_GPUColorTargetDescription[])
             {{
-                .format = SDL_GetGPUSwapchainTextureFormat(device, window) 
+                .format = SDL_GPU_TEXTUREFORMAT_R32G32B32A32_FLOAT,
             }},
         },
         .vertex_input_state =
@@ -301,7 +301,7 @@ static SDL_GPUGraphicsPipeline* load_transparent(SDL_Window* window)
             .num_color_targets = 1,
             .color_target_descriptions = (SDL_GPUColorTargetDescription[])
             {{
-                .format = SDL_GetGPUSwapchainTextureFormat(device, window),
+                .format = SDL_GPU_TEXTUREFORMAT_R32G32B32A32_FLOAT,
                 .blend_state =
                 {
                     .enable_blend = 1,
@@ -366,7 +366,7 @@ static SDL_GPUGraphicsPipeline* load_raycast(SDL_Window* window)
             .num_color_targets = 1,
             .color_target_descriptions = (SDL_GPUColorTargetDescription[])
             {{
-                .format = SDL_GetGPUSwapchainTextureFormat(device, window),
+                .format = SDL_GPU_TEXTUREFORMAT_R32G32B32A32_FLOAT,
                 .blend_state =
                 {
                     .enable_blend = 1,
@@ -420,7 +420,7 @@ static SDL_GPUGraphicsPipeline* load_ui(SDL_Window* window)
 {
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
-        .vertex_shader = load(device, "ui.vert", 0, 0),
+        .vertex_shader = load(device, "default.vert", 0, 0),
         .fragment_shader = load(device, "ui.frag", 2, 1),
         .target_info =
         {

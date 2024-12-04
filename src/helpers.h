@@ -52,14 +52,3 @@ void sort_3d(
     const int z,
     void* data,
     const int size);
-
-typedef struct
-{
-    int a;
-    int b;
-}
-tag_t;
-
-void tag_init(tag_t* tag);
-void tag_invalidate(tag_t* tag);
-bool tag_same(const tag_t a, const tag_t b);

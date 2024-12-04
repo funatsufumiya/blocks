@@ -192,6 +192,29 @@ bool terrain_border(
         z == WORLD_Z - 1;
 }
 
+void terrain_neighbors(
+    terrain_t* terrain,
+    const int x,
+    const int z,
+    group_t* neighbors[DIRECTION_2])
+{
+    assert(terrain);
+    assert(terrain_in(terrain, x, z));
+    for (direction_t d = 0; d < DIRECTION_2; d++)
+    {
+        const int a = x + directions[d][0];
+        const int b = z + directions[d][2];
+        if (terrain_in(terrain, a, b))
+        {
+            neighbors[d] = terrain_get(terrain, a, b);
+        }
+        else
+        {
+            neighbors[d] = NULL;
+        }
+    }
+}
+
 group_t* terrain_get2(
     const terrain_t* terrain,
     const int x,
@@ -232,20 +255,9 @@ void terrain_neighbors2(
     group_t* neighbors[DIRECTION_2])
 {
     assert(terrain);
-    assert(terrain_in2(terrain, x, z));
-    for (direction_t d = 0; d < DIRECTION_2; d++)
-    {
-        const int a = x + directions[d][0];
-        const int b = z + directions[d][2];
-        if (terrain_in2(terrain, a, b))
-        {
-            neighbors[d] = terrain_get2(terrain, a, b);
-        }
-        else
-        {
-            neighbors[d] = NULL;
-        }
-    }
+    const int a = x - terrain->x;
+    const int b = z - terrain->z;
+    terrain_neighbors(terrain, a, b, neighbors);
 }
 
 int* terrain_move(

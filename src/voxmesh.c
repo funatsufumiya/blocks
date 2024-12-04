@@ -266,7 +266,7 @@ bool voxmesh_vbo(
     }
     if (!chunk->opaque_size && !chunk->transparent_size)
     {
-        return false;
+        return true;
     }
     if (chunk->opaque_size > *opaque_capacity || chunk->transparent_size > *transparent_capacity)
     {

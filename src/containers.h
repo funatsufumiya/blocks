@@ -29,7 +29,6 @@ bool queue_remove(queue_t* queue, void* item);
 
 typedef struct
 {
-    tag_t tag;
     block_t blocks[CHUNK_X][CHUNK_Y][CHUNK_Z];
     SDL_GPUBuffer* opaque_vbo;
     SDL_GPUBuffer* transparent_vbo;
@@ -53,9 +52,7 @@ bool chunk_in(
 
 typedef struct
 {
-    tag_t tag;
     chunk_t chunks[GROUP_CHUNKS];
-    direction_t neighbors;
     bool dirty;
 }
 group_t;
@@ -94,6 +91,11 @@ bool terrain_border(
     const terrain_t* terrain,
     const int x,
     const int z);
+void terrain_neighbors(
+    terrain_t* terrain,
+    const int x,
+    const int z,
+    group_t* neighbors[DIRECTION_2]);
 group_t* terrain_get2(
     const terrain_t* terrain,
     const int x,

@@ -94,20 +94,3 @@ void sort_3d(
     is_2d = false;
     qsort(data, size, 12, compare);
 }
-
-static int counter = 0;
-
-void tag_init(tag_t* tag)
-{
-    tag->a = counter++;
-}
-
-void tag_invalidate(tag_t* tag)
-{
-    tag->b++;
-}
-
-bool tag_same(const tag_t a, const tag_t b)
-{
-    return a.a == b.a && a.b == b.b;
-}

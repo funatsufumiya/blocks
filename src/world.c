@@ -26,7 +26,6 @@ job_type_t;
 typedef struct
 {
     job_type_t type;
-    tag_t tag;
     int x;
     int y;
     int z;
@@ -50,12 +49,12 @@ static terrain_t terrain;
 static SDL_GPUDevice* device;
 static SDL_GPUBuffer* ibo;
 static uint32_t ibo_size;
-static queue_t queue;
 static worker_t workers[WORLD_WORKERS];
-static int sorted[WORLD_Y][WORLD_CHUNKS][3];
+static int sorted2d[WORLD_GROUPS][2];
+static int sorted3d[WORLD_Y][WORLD_CHUNKS][3];
 static int height;
 
-static void get_neighbors(
+static void get_neighbors2(
     const int x,
     const int y,
     const int z,
@@ -95,9 +94,9 @@ static int loop(void* args)
             mtx_unlock(&worker->mtx);
             return 0;
         }
-        const int x = worker->job->x;
+        const int x = terrain.x + worker->job->x;
         const int y = worker->job->y;
-        const int z = worker->job->z;
+        const int z = terrain.z + worker->job->z;
         group_t* group = terrain_get2(&terrain, x, z);
         switch (worker->job->type)
         {
@@ -111,7 +110,7 @@ static int loop(void* args)
             chunk_t* chunk = &group->chunks[y];
             assert(!chunk->empty);
             chunk_t* neighbors[DIRECTION_3];
-            get_neighbors(x, y, z, neighbors);
+            get_neighbors2(x, y, z, neighbors);
             if (voxmesh_vbo(
                 chunk,
                 neighbors,
@@ -157,112 +156,12 @@ static void wait(worker_t* worker)
     mtx_unlock(&worker->mtx);
 }
 
-static void load(
-    group_t* group,
-    const int x,
-    const int z)
-{
-    assert(group);
-    assert(!group->neighbors);
-    assert(group->dirty);
-    assert(terrain_in2(&terrain, x, z));
-    group_t* neighbors[DIRECTION_2];
-    terrain_neighbors2(&terrain, x, z, neighbors);
-    for (direction_t c = 0; c < DIRECTION_2; c++)
-    {
-        const group_t* neighbor = neighbors[c];
-        if (neighbor)
-        {
-            group->neighbors += !neighbor->dirty;
-        }
-    }
-    tag_invalidate(&group->tag);
-    job_t job;
-    job.type = JOB_TYPE_LOAD;
-    job.tag = group->tag;
-    job.x = x;
-    job.y = 0;
-    job.z = z;
-    if (!queue_append(&queue, &job, false))
-    {
-        SDL_Log("Failed to add load job");
-    }
-}
-
-static bool mesh(
-    chunk_t* chunk,
-    const int x,
-    const int y,
-    const int z)
-{
-    assert(chunk);
-    assert(terrain_in2(&terrain, x, z));
-    if (chunk->empty)
-    {
-        return true;
-    }
-    tag_invalidate(&chunk->tag);
-    job_t job;
-    job.type = JOB_TYPE_MESH;
-    job.tag = chunk->tag;
-    job.x = x;
-    job.y = y;
-    job.z = z;
-    if (!queue_append(&queue, &job, true))
-    {
-        SDL_Log("Failed to add mesh job");
-        return false;
-    }
-    return true;
-}
-
-static void mesh_all(
-    group_t* group,
-    const int x,
-    const int z)
-{
-    assert(group);
-    assert(group->neighbors >= DIRECTION_2);
-    assert(!group->dirty);
-    assert(terrain_in2(&terrain, x, z));
-    if (terrain_border2(&terrain, x, z))
-    {
-        return;
-    }
-    for (int y = 0; y < GROUP_CHUNKS; y++)
-    {
-        chunk_t* chunk = &group->chunks[y];
-        if (!chunk->dirty)
-        {
-            continue;
-        }
-        if (!mesh(chunk, x, y, z))
-        {
-            return;
-        }
-    }
-}
-
 bool world_init(SDL_GPUDevice* handle)
 {
     assert(handle);
     device = handle;
     height = INT32_MAX;
     terrain_init(&terrain);
-    for (int x = 0; x < WORLD_X; x++)
-    {
-        for (int z = 0; z < WORLD_Z; z++)
-        {
-            group_t* group = terrain_get(&terrain, x, z);
-            for (int i = 0; i < GROUP_CHUNKS; i++)
-            {
-                chunk_t* chunk = &group->chunks[i];
-                tag_init(&chunk->tag);
-            }
-            tag_init(&group->tag);
-        }
-    }
-    queue_init(&queue, WORLD_JOBS, sizeof(job_t));
     for (int i = 0; i < WORLD_WORKERS; i++)
     {
         worker_t* worker = &workers[i];
@@ -290,15 +189,26 @@ bool world_init(SDL_GPUDevice* handle)
         for (int y = 0; y < WORLD_Y; y++)
         for (int z = 0; z < WORLD_Z; z++)
         {
-            sorted[i][j][0] = x;
-            sorted[i][j][1] = y;
-            sorted[i][j][2] = z;
+            sorted3d[i][j][0] = x;
+            sorted3d[i][j][1] = y;
+            sorted3d[i][j][2] = z;
             j++;
         }
         const int w = WORLD_X / 2;
         const int h = WORLD_Z / 2;
-        sort_3d(w, i, h, sorted[i], WORLD_CHUNKS);
+        sort_3d(w, i, h, sorted3d[i], WORLD_CHUNKS);
     }
+    int j = 0;
+    for (int x = 0; x < WORLD_X; x++)
+    for (int z = 0; z < WORLD_Z; z++)
+    {
+        sorted2d[j][0] = x;
+        sorted2d[j][1] = z;
+        j++;
+    }
+    const int w = WORLD_X / 2;
+    const int h = WORLD_Z / 2;
+    sort_2d(w, h, sorted2d, WORLD_GROUPS);
     return true;
 }
 
@@ -329,7 +239,6 @@ void world_free()
             worker->transparent_tbo = NULL;
         }
     }
-    queue_free(&queue);
     for (int x = 0; x < WORLD_X; x++)
     {
         for (int z = 0; z < WORLD_Z; z++)
@@ -376,7 +285,6 @@ static void move(
     {
         return;
     }
-    sort_2d(WORLD_X / 2, WORLD_Z / 2, data, size);
     for (int i = 0; i < size; i++)
     {
         const int j = data[i * 2 + 0];
@@ -389,78 +297,9 @@ static void move(
             chunk->dirty = true;
             chunk->empty = true;
         }
-        group->neighbors = 0;
         group->dirty = true;
     }
-    for (int i = 0; i < size; i++)
-    {
-        const int j = data[i * 2 + 0];
-        const int k = data[i * 2 + 1];
-        assert(terrain_in(&terrain, j, k));
-        group_t* group = terrain_get(&terrain, j, k);
-        load(group, j + terrain.x, k + terrain.z);
-    }
     free(data);
-}
-
-static bool test(const job_t* job)
-{
-    assert(job);
-    const int x = job->x;
-    const int y = job->y;
-    const int z = job->z;
-    if (!terrain_in2(&terrain, x, z))
-    {
-        return false;
-    }
-    const group_t* group = terrain_get2(&terrain, x, z);
-    const chunk_t* chunk = &group->chunks[y];
-    switch (job->type)
-    {
-    case JOB_TYPE_LOAD:
-        return tag_same(job->tag, group->tag);
-    case JOB_TYPE_MESH:
-        return tag_same(job->tag, chunk->tag) && !terrain_border2(&terrain, x, z);
-    }
-    assert(0);
-    return false;
-}
-
-static void on_load(
-    group_t* group,
-    const int x,
-    const int z)
-{
-    assert(group);
-    group_t* neighbors[DIRECTION_2];
-    terrain_neighbors2(&terrain, x, z, neighbors);
-    int i = 0;
-    for (direction_t d = 0; d < DIRECTION_2; d++)
-    {
-        group_t* neighbor = neighbors[d];
-        if (!neighbor)
-        {
-            continue;
-        }
-        neighbor->neighbors++;
-        if (neighbor->dirty)
-        {
-            continue;
-        }
-        i++;
-        if (neighbor->neighbors < DIRECTION_2)
-        {
-            continue;
-        }
-        const int a = x + directions[d][0];
-        const int b = z + directions[d][2];
-        mesh_all(neighbor, a, b);
-    }
-    if (i >= DIRECTION_2)
-    {
-        group->neighbors = i;
-        mesh_all(group, x, z);
-    }
 }
 
 void world_update(
@@ -469,47 +308,77 @@ void world_update(
     const int z)
 {
     move(x, y, z);
-    uint32_t n;
-    job_t data[WORLD_WORKERS];
-    uint32_t size = 0;
-    for (n = 0; n < WORLD_WORKERS;)
+    int n = 0;
+    job_t jobs[WORLD_WORKERS];
+    for (int i = 0; i < WORLD_GROUPS && n < WORLD_WORKERS; i++)
     {
-        if (!queue_remove(&queue, &data[n]))
+        const int j = sorted2d[i][0];
+        const int k = sorted2d[i][1];
+        group_t* group = terrain_get(&terrain, j, k);
+        if (group->dirty)
         {
-            break;
+            job_t* job = &jobs[n++];
+            job->type = JOB_TYPE_LOAD;
+            job->x = j;
+            job->y = 0;
+            job->z = k;
+            continue;
         }
-        if (!test(&data[n]))
+        if (terrain_border(&terrain, j, k))
         {
             continue;
         }
-        n++;
+        bool dirty = false;
+        group_t* neighbors[DIRECTION_2];
+        terrain_neighbors(&terrain, j, k, neighbors);
+        for (direction_t direction = 0; direction < DIRECTION_2; direction++)
+        {
+            const group_t* neighbor = neighbors[direction];
+            if (!neighbor || neighbor->dirty)
+            {
+                dirty = true;
+                break;
+            }
+        }
+        if (dirty)
+        {
+            continue;
+        }
+        for (int h = 0; h < GROUP_CHUNKS && n < WORLD_WORKERS; h++)
+        {
+            chunk_t* chunk = &group->chunks[h];
+            if (!chunk->dirty || chunk->empty)
+            {
+                continue;
+            }
+            job_t* job = &jobs[n++];
+            job->type = JOB_TYPE_MESH;
+            job->x = j;
+            job->y = h;
+            job->z = k;
+        }
     }
+    uint32_t size = 0;
     for (int i = 0; i < n; i++)
     {
-        dispatch(&workers[i], &data[i]);
+        dispatch(&workers[i], &jobs[i]);
     }
-    for (int i = 0; i < WORLD_WORKERS; i++)
+    for (int i = 0; i < n; i++)
     {
         wait(&workers[i]);
     }
     for (int i = 0; i < n; i++)
     {
-        const job_t* job = &data[i];
-        group_t* group = terrain_get2(&terrain, job->x, job->z);
-        switch (job->type)
+        const job_t* job = &jobs[i];
+        if (job->type != JOB_TYPE_MESH)
         {
-        case JOB_TYPE_LOAD:
-            on_load(group, job->x, job->z);
-            break;
-        case JOB_TYPE_MESH:
-            size = max3(
-                size,
-                group->chunks[job->y].opaque_size,
-                group->chunks[job->y].transparent_size);
-            break;
-        default:
-            assert(0);
+            continue;
         }
+        group_t* group = terrain_get(&terrain, job->x, job->z);
+        size = max3(
+            size,
+            group->chunks[job->y].opaque_size,
+            group->chunks[job->y].transparent_size);
     }
     if (size > ibo_size)
     {
@@ -552,9 +421,9 @@ void world_render(
         {
             j = WORLD_CHUNKS - i - 1;
         }
-        int x = sorted[height][j][0] + terrain.x;
-        int y = sorted[height][j][1];
-        int z = sorted[height][j][2] + terrain.z;
+        int x = sorted3d[height][j][0] + terrain.x;
+        int y = sorted3d[height][j][1];
+        int z = sorted3d[height][j][2] + terrain.z;
         if (terrain_border2(&terrain, x, z))
         {
             continue;
@@ -624,32 +493,32 @@ void world_set_block(
     group_set_block(group, d, y, f, block);
     const int e = y / CHUNK_Y;
     chunk_t* chunk = &group->chunks[e];
-    mesh(chunk, a, e, c);
+    chunk->dirty = true;
     chunk_t* neighbors[DIRECTION_3];
-    get_neighbors(a, e, c, neighbors);
+    get_neighbors2(a, e, c, neighbors);
     if (d == 0 && neighbors[DIRECTION_W])
     {
-        mesh(neighbors[DIRECTION_W], a - 1, e, c);
+        neighbors[DIRECTION_W]->dirty = true;
     }
     else if (d == CHUNK_X - 1 && neighbors[DIRECTION_E])
     {
-        mesh(neighbors[DIRECTION_E], a + 1, e, c);
+        neighbors[DIRECTION_E]->dirty = true;
     }
     if (f == 0 && neighbors[DIRECTION_S])
     {
-        mesh(neighbors[DIRECTION_S], a, e, c - 1);
+        neighbors[DIRECTION_S]->dirty = true;
     }
     else if (f == CHUNK_Z - 1 && neighbors[DIRECTION_N])
     {
-        mesh(neighbors[DIRECTION_N], a, e, c + 1);
+        neighbors[DIRECTION_N]->dirty = true;
     }
     if (b == 0 && neighbors[DIRECTION_D])
     {
-        mesh(neighbors[DIRECTION_D], a, e - 1, c);
+        neighbors[DIRECTION_D]->dirty = true;
     }
     else if (b == CHUNK_Y - 1 && neighbors[DIRECTION_U])
     {
-        mesh(neighbors[DIRECTION_U], a, e + 1, c);
+        neighbors[DIRECTION_U]->dirty = true;
     }
 }
 

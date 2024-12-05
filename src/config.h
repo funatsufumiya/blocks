@@ -18,7 +18,7 @@
 #define PLAYER_SPEED 0.015f
 #define PLAYER_SPRINT_SPEED 0.03f
 #define PLAYER_SENSITIVITY 0.1f
-#define PLAYER_Y 60
+#define PLAYER_Y 60.0f
 
 #define SHADOW_SIZE 4096
 #define SHADOW_Y 30.0f

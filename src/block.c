@@ -2,7 +2,8 @@
 #include "block.h"
 #include "helpers.h"
 
-bool block_opaque(const block_t block)
+bool block_opaque(
+    const block_t block)
 {
     assert(block < BLOCK_COUNT);
     switch (block)
@@ -13,7 +14,8 @@ bool block_opaque(const block_t block)
     return 1;
 }
 
-bool block_shadow(const block_t block)
+bool block_shadow(
+    const block_t block)
 {
     assert(block < BLOCK_COUNT);
     if (block_sprite(block))
@@ -28,7 +30,8 @@ bool block_shadow(const block_t block)
     return 1;
 }
 
-bool block_shadowed(const block_t block)
+bool block_shadowed(
+    const block_t block)
 {
     assert(block < BLOCK_COUNT);
     switch (block)
@@ -39,7 +42,8 @@ bool block_shadowed(const block_t block)
     return 1;
 }
 
-bool block_solid(const block_t block)
+bool block_solid(
+    const block_t block)
 {
     assert(block < BLOCK_COUNT);
     if (block_sprite(block))
@@ -55,7 +59,8 @@ bool block_solid(const block_t block)
     return 1;
 }
 
-bool block_sprite(const block_t block)
+bool block_sprite(
+    const block_t block)
 {
     assert(block < BLOCK_COUNT);
     switch (block)

@@ -50,8 +50,8 @@ static SDL_GPUDevice* device;
 static SDL_GPUBuffer* ibo;
 static uint32_t ibo_size;
 static worker_t workers[WORLD_WORKERS];
-static int sorted2d[WORLD_GROUPS][2];
-static int sorted3d[WORLD_Y][WORLD_CHUNKS][3];
+static int sort2[WORLD_GROUPS][2];
+static int sort3[WORLD_Y][WORLD_CHUNKS][3];
 static int height;
 
 static void get_neighbors2(
@@ -76,7 +76,8 @@ static void get_neighbors2(
     }
 }
 
-static int loop(void* args)
+static int loop(
+    void* args)
 {
     assert(args);
     worker_t* worker = args;
@@ -111,7 +112,7 @@ static int loop(void* args)
             assert(!chunk->empty);
             chunk_t* neighbors[DIRECTION_3];
             get_neighbors2(x, y, z, neighbors);
-            if (voxmesh_vbo(
+            chunk->dirty = !voxmesh_vbo(
                 chunk,
                 neighbors,
                 y,
@@ -119,10 +120,7 @@ static int loop(void* args)
                 &worker->opaque_tbo,
                 &worker->transparent_tbo,
                 &worker->opaque_size,
-                &worker->transparent_size))
-            {
-                chunk->dirty = false;
-            }
+                &worker->transparent_size);
             break;
         default:
             assert(0);
@@ -134,7 +132,9 @@ static int loop(void* args)
     return 0;
 }
 
-static void dispatch(worker_t* worker, const job_t* job)
+static void dispatch(
+    worker_t* worker,
+    const job_t* job)
 {
     assert(worker);
     assert(job);
@@ -145,7 +145,8 @@ static void dispatch(worker_t* worker, const job_t* job)
     mtx_unlock(&worker->mtx);
 }
 
-static void wait(worker_t* worker)
+static void wait(
+    worker_t* worker)
 {
     assert(worker);
     mtx_lock(&worker->mtx);
@@ -156,7 +157,8 @@ static void wait(worker_t* worker)
     mtx_unlock(&worker->mtx);
 }
 
-bool world_init(SDL_GPUDevice* handle)
+bool world_init(
+    SDL_GPUDevice* handle)
 {
     assert(handle);
     device = handle;
@@ -189,26 +191,26 @@ bool world_init(SDL_GPUDevice* handle)
         for (int y = 0; y < WORLD_Y; y++)
         for (int z = 0; z < WORLD_Z; z++)
         {
-            sorted3d[i][j][0] = x;
-            sorted3d[i][j][1] = y;
-            sorted3d[i][j][2] = z;
+            sort3[i][j][0] = x;
+            sort3[i][j][1] = y;
+            sort3[i][j][2] = z;
             j++;
         }
         const int w = WORLD_X / 2;
         const int h = WORLD_Z / 2;
-        sort_3d(w, i, h, sorted3d[i], WORLD_CHUNKS);
+        sort_3d(w, i, h, sort3[i], WORLD_CHUNKS);
     }
     int j = 0;
     for (int x = 0; x < WORLD_X; x++)
     for (int z = 0; z < WORLD_Z; z++)
     {
-        sorted2d[j][0] = x;
-        sorted2d[j][1] = z;
+        sort2[j][0] = x;
+        sort2[j][1] = z;
         j++;
     }
     const int w = WORLD_X / 2;
     const int h = WORLD_Z / 2;
-    sort_2d(w, h, sorted2d, WORLD_GROUPS);
+    sort_2d(w, h, sort2, WORLD_GROUPS);
     return true;
 }
 
@@ -312,8 +314,8 @@ void world_update(
     job_t jobs[WORLD_WORKERS];
     for (int i = 0; i < WORLD_GROUPS && n < WORLD_WORKERS; i++)
     {
-        const int j = sorted2d[i][0];
-        const int k = sorted2d[i][1];
+        const int j = sort2[i][0];
+        const int k = sort2[i][1];
         group_t* group = terrain_get(&terrain, j, k);
         if (group->dirty)
         {
@@ -421,9 +423,9 @@ void world_render(
         {
             j = WORLD_CHUNKS - i - 1;
         }
-        int x = sorted3d[height][j][0] + terrain.x;
-        int y = sorted3d[height][j][1];
-        int z = sorted3d[height][j][2] + terrain.z;
+        int x = sort3[height][j][0] + terrain.x;
+        int y = sort3[height][j][1];
+        int z = sort3[height][j][2] + terrain.z;
         if (terrain_border2(&terrain, x, z))
         {
             continue;

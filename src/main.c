@@ -209,7 +209,8 @@ static bool create_textures()
     return true;
 }
 
-SDL_Surface* create_icon(const block_t block)
+SDL_Surface* create_icon(
+    const block_t block)
 {
     assert(block < BLOCK_COUNT);
     if (!atlas_surface)
@@ -669,7 +670,8 @@ static bool poll()
     return true;
 }
 
-static void move(const float dt)
+static void move(
+    const float dt)
 {
     float x = 0.0f;
     float y = 0.0f;
@@ -713,10 +715,10 @@ static void commit()
     database_commit();
 }
 
-int main(int argc, char** argv)
+int main(
+    int argc,
+    char** argv)
 {
-    (void) argc;
-    (void) argv;
     SDL_SetAppMetadata(APP_NAME, NULL, NULL);
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
@@ -740,7 +742,7 @@ int main(int argc, char** argv)
         SDL_Log("Failed to create swapchain: %s", SDL_GetError());
         return EXIT_FAILURE;
     }
-    if (!pipeline_init(device, window))
+    if (!pipeline_init(device, SDL_GetGPUSwapchainTextureFormat(device, window)))
     {
         SDL_Log("Failed to create pipelines");
         return EXIT_FAILURE;

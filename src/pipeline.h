@@ -19,7 +19,7 @@ pipeline_t;
 
 bool pipeline_init(
     SDL_GPUDevice* device,
-    SDL_Window* window);
+    SDL_GPUTextureFormat format);
 void pipeline_free();
 void pipeline_bind(
     SDL_GPURenderPass* pass,

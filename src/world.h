@@ -12,7 +12,8 @@ typedef enum
 }
 world_pass_type_t;
 
-bool world_init(SDL_GPUDevice* device);
+bool world_init(
+    SDL_GPUDevice* device);
 void world_free();
 void world_update(
     const int x,

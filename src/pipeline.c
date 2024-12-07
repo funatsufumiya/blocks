@@ -46,7 +46,8 @@ static SDL_GPUShader* load(
     return shader;
 }
 
-static SDL_GPUGraphicsPipeline* load_sky(SDL_Window* window)
+static SDL_GPUGraphicsPipeline* load_sky(
+    SDL_GPUTextureFormat format)
 {
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
@@ -89,7 +90,8 @@ static SDL_GPUGraphicsPipeline* load_sky(SDL_Window* window)
     return pipeline;
 }
 
-static SDL_GPUGraphicsPipeline* load_shadow(SDL_Window* window)
+static SDL_GPUGraphicsPipeline* load_shadow(
+    SDL_GPUTextureFormat format)
 {
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
@@ -141,7 +143,8 @@ static SDL_GPUGraphicsPipeline* load_shadow(SDL_Window* window)
     return pipeline;
 }
 
-static SDL_GPUGraphicsPipeline* load_opaque(SDL_Window* window)
+static SDL_GPUGraphicsPipeline* load_opaque(
+    SDL_GPUTextureFormat format)
 {
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
@@ -204,7 +207,8 @@ static SDL_GPUGraphicsPipeline* load_opaque(SDL_Window* window)
     return pipeline;
 }
 
-static SDL_GPUGraphicsPipeline* load_ssao(SDL_Window* window)
+static SDL_GPUGraphicsPipeline* load_ssao(
+    SDL_GPUTextureFormat format)
 {
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
@@ -247,7 +251,8 @@ static SDL_GPUGraphicsPipeline* load_ssao(SDL_Window* window)
     return pipeline;
 }
 
-static SDL_GPUGraphicsPipeline* load_composite(SDL_Window* window)
+static SDL_GPUGraphicsPipeline* load_composite(
+    SDL_GPUTextureFormat format)
 {
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
@@ -290,7 +295,8 @@ static SDL_GPUGraphicsPipeline* load_composite(SDL_Window* window)
     return pipeline;
 }
 
-static SDL_GPUGraphicsPipeline* load_transparent(SDL_Window* window)
+static SDL_GPUGraphicsPipeline* load_transparent(
+    SDL_GPUTextureFormat format)
 {
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
@@ -355,7 +361,8 @@ static SDL_GPUGraphicsPipeline* load_transparent(SDL_Window* window)
     return pipeline;
 }
 
-static SDL_GPUGraphicsPipeline* load_raycast(SDL_Window* window)
+static SDL_GPUGraphicsPipeline* load_raycast(
+    SDL_GPUTextureFormat format)
 {
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
@@ -416,7 +423,8 @@ static SDL_GPUGraphicsPipeline* load_raycast(SDL_Window* window)
     return pipeline;
 }
 
-static SDL_GPUGraphicsPipeline* load_ui(SDL_Window* window)
+static SDL_GPUGraphicsPipeline* load_ui(
+    SDL_GPUTextureFormat format)
 {
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
@@ -427,7 +435,7 @@ static SDL_GPUGraphicsPipeline* load_ui(SDL_Window* window)
             .num_color_targets = 1,
             .color_target_descriptions = (SDL_GPUColorTargetDescription[])
             {{
-                .format = SDL_GetGPUSwapchainTextureFormat(device, window),
+                .format = format,
                 .blend_state =
                 {
                     .enable_blend = 1,
@@ -471,23 +479,24 @@ static SDL_GPUGraphicsPipeline* load_ui(SDL_Window* window)
 
 bool pipeline_init(
     SDL_GPUDevice* handle,
-    SDL_Window* window)
+    SDL_GPUTextureFormat format)
 {
     assert(handle);
-    assert(window);
+    assert(format);
     device = handle;
-    pipelines[PIPELINE_SKY] = load_sky(window);
-    pipelines[PIPELINE_SHADOW] = load_shadow(window);
-    pipelines[PIPELINE_OPAQUE] = load_opaque(window);
-    pipelines[PIPELINE_SSAO] = load_ssao(window);
-    pipelines[PIPELINE_COMPOSITE] = load_composite(window);
-    pipelines[PIPELINE_TRANSPARENT] = load_transparent(window);
-    pipelines[PIPELINE_RAYCAST] = load_raycast(window);
-    pipelines[PIPELINE_UI] = load_ui(window);
+    pipelines[PIPELINE_SKY] = load_sky(format);
+    pipelines[PIPELINE_SHADOW] = load_shadow(format);
+    pipelines[PIPELINE_OPAQUE] = load_opaque(format);
+    pipelines[PIPELINE_SSAO] = load_ssao(format);
+    pipelines[PIPELINE_COMPOSITE] = load_composite(format);
+    pipelines[PIPELINE_TRANSPARENT] = load_transparent(format);
+    pipelines[PIPELINE_RAYCAST] = load_raycast(format);
+    pipelines[PIPELINE_UI] = load_ui(format);
     for (pipeline_t pipeline = 0; pipeline < PIPELINE_COUNT; pipeline++)
     {
         if (!pipelines[pipeline])
         {
+            SDL_Log("Failed to load pipeline: %d", pipeline);
             return false;
         }
     }

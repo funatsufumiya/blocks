@@ -30,7 +30,7 @@ void main()
     vec3 position = u_position + get_position(i_voxel);
     o_uv = get_uv(i_voxel);
     o_shadowed = uint(get_shadowed(i_voxel));
-    o_fog = get_fog(position.xz, u_player_position.xz);
+    o_fog = get_fog(distance(position.xz, u_player_position.xz));
     gl_Position = u_matrix * vec4(position, 1.0);
     if (!bool(o_shadowed))
     {

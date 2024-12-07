@@ -24,7 +24,6 @@ bool raycast(
         float a = *x + dx * i;
         float b = *y + dy * i;
         float c = *z + dz * i;
-        // TODO: why?
         if (a <= 0.0f)
         {
             a -= 1.0f;
@@ -41,7 +40,6 @@ bool raycast(
                 b -= dy * step;
                 c -= dz * step;
             }
-            // TODO: why?
             if (a < 0.0f && a > -1.0f && dx > 0.0f)
             {
                 a = -1.0f;

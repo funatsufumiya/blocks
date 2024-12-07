@@ -8,7 +8,7 @@ layout(set = 2, binding = 0) uniform sampler2D s_position;
 layout(set = 2, binding = 1) uniform sampler2D s_uv;
 layout(set = 2, binding = 2) uniform usampler2D s_voxel;
 
-bool get_edge(
+bool test(
     const uint direction,
     const vec3 position,
     const vec3 neighbor)
@@ -50,7 +50,7 @@ void main()
             const vec2 neighbor_uv = texture(s_uv, random).xy;
             if (length(neighbor_uv) == 0 ||
                 direction != neighbor_direction ||
-                get_edge(neighbor_direction, position.xyz, neighbor_position))
+                test(neighbor_direction, position.xyz, neighbor_position))
             {
                 ssao += 1.0;
             }

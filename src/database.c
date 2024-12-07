@@ -55,7 +55,8 @@ static sqlite3_stmt* set_block_stmt;
 static sqlite3_stmt* get_blocks_stmt;
 static sqlite3* handle;
 
-static int loop(void* args)
+static int loop(
+    void* args)
 {
     (void) args;
     sqlite3_exec(handle, "BEGIN;", NULL, NULL, NULL);
@@ -107,7 +108,8 @@ static int loop(void* args)
     return 0;
 }
 
-bool database_init(const char* file)
+bool database_init(
+    const char* file)
 {
     assert(file);
     if (sqlite3_open(file, &handle))

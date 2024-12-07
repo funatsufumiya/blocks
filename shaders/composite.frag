@@ -41,6 +41,6 @@ void main()
         u_shadow_vector,
         get_shadowed(voxel),
         get_normal(voxel),
-        get_fog(position.xz, u_player_position.xz),
+        get_fog(distance(position.xz, u_player_position.xz)),
         texture(s_ssao, i_uv).r);
 }

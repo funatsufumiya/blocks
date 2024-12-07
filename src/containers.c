@@ -22,7 +22,8 @@ void queue_init(
     assert(queue->data);
 }
 
-void queue_free(queue_t* queue)
+void queue_free(
+    queue_t* queue)
 {
     assert(queue);
     free(queue->data);
@@ -54,7 +55,9 @@ bool queue_append(
     return true;
 }
 
-bool queue_remove(queue_t* queue, void* item)
+bool queue_remove(
+    queue_t* queue,
+    void* item)
 {
     assert(queue);
     assert(queue->data);
@@ -127,7 +130,8 @@ void group_set_block(
     chunk->empty = false;
 }
 
-void terrain_init(terrain_t* terrain)
+void terrain_init(
+    terrain_t* terrain)
 {
     assert(terrain);
     terrain->x = INT_MAX;
@@ -142,7 +146,8 @@ void terrain_init(terrain_t* terrain)
     }
 }
 
-void terrain_free(terrain_t* terrain)
+void terrain_free(
+    terrain_t* terrain)
 {
     assert(terrain);
     for (int x = 0; x < WORLD_X; x++)

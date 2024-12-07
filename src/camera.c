@@ -200,7 +200,8 @@ void camera_init(
     camera->dirty = true;
 }
 
-void camera_update(camera_t* camera)
+void camera_update(
+    camera_t* camera)
 {
     assert(camera);
     if (!camera->dirty)

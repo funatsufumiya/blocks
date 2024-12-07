@@ -20,12 +20,15 @@ void queue_init(
     queue_t* queue,
     const int size,
     const int stride);
-void queue_free(queue_t* queue);
+void queue_free(
+    queue_t* queue);
 bool queue_append(
     queue_t* queue,
     const void* item,
     const bool priority);
-bool queue_remove(queue_t* queue, void* item);
+bool queue_remove(
+    queue_t* queue,
+    void* item);
 
 typedef struct
 {
@@ -77,8 +80,10 @@ typedef struct
 }
 terrain_t;
 
-void terrain_init(terrain_t* terrain);
-void terrain_free(terrain_t* terrain);
+void terrain_init(
+    terrain_t* terrain);
+void terrain_free(
+    terrain_t* terrain);
 group_t* terrain_get(
     const terrain_t* terrain,
     const int x,

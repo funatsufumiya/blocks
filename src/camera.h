@@ -34,7 +34,8 @@ camera_t;
 void camera_init(
     camera_t* camera,
     const camera_type_t type);
-void camera_update(camera_t* camera);
+void camera_update(
+    camera_t* camera);
 void camera_viewport(
     camera_t* camera,
     const int width,

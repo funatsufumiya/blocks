@@ -6,7 +6,8 @@
 #include "helpers.h"
 #include "noise.h"
 
-bool database_init(const char* file);
+bool database_init(
+    const char* file);
 void database_free();
 void database_commit();
 void database_set_player(

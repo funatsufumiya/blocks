@@ -32,26 +32,18 @@ void queue_free(
 
 bool queue_append(
     queue_t* queue,
-    const void* item,
-    const bool priority)
+    const void* item)
 {
     assert(queue);
     assert(queue->data);
     assert(item);
-    if ((queue->tail + 1) % queue->size == queue->head)
+    const int tail = (queue->tail + 1) % queue->size;
+    if (tail == queue->head)
     {
         return false;
     }
-    if (priority)
-    {
-        queue->head = (queue->head - 1 + queue->size) % queue->size;
-        memcpy(queue->data + queue->head * queue->stride, item, queue->stride);
-    }
-    else
-    {
-        memcpy(queue->data + queue->tail * queue->stride, item, queue->stride);
-        queue->tail = (queue->tail + 1) % queue->size;
-    }
+    memcpy(queue->data + queue->tail * queue->stride, item, queue->stride);
+    queue->tail = tail;
     return true;
 }
 

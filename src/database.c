@@ -209,7 +209,7 @@ void database_free()
     job_t job;
     job.type = JOB_TYPE_QUIT;
     mtx_lock(&mtx);
-    while (!queue_append(&queue, &job, false))
+    while (!queue_append(&queue, &job))
     {
         SDL_Log("Failed to add quit job");
     }
@@ -230,7 +230,7 @@ void database_commit()
     job_t job;
     job.type = JOB_TYPE_COMMIT;
     mtx_lock(&mtx);
-    if (!queue_append(&queue, &job, false))
+    if (!queue_append(&queue, &job))
     {
         SDL_Log("Failed to add commit job");
     }
@@ -255,7 +255,7 @@ void database_set_player(
     job.player_pitch = pitch;
     job.player_yaw = yaw;
     mtx_lock(&mtx);
-    if (!queue_append(&queue, &job, false))
+    if (!queue_append(&queue, &job))
     {
         SDL_Log("Failed to add player job");
     }
@@ -309,7 +309,7 @@ void database_set_block(
     job.block_z = z;
     job.block_id = block;
     mtx_lock(&mtx);
-    if (!queue_append(&queue, &job, false))
+    if (!queue_append(&queue, &job))
     {
         SDL_Log("Failed to add block job");
     }

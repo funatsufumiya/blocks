@@ -24,8 +24,7 @@ void queue_free(
     queue_t* queue);
 bool queue_append(
     queue_t* queue,
-    const void* item,
-    const bool priority);
+    const void* item);
 bool queue_remove(
     queue_t* queue,
     void* item);

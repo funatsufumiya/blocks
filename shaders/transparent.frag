@@ -21,10 +21,10 @@ void main()
         s_atlas,
         s_shadowmap,
         i_uv,
+        i_normal,
         i_shadow_position.xyz / i_shadow_position.w,
         u_shadow_vector,
         bool(i_shadowed),
-        i_normal,
         i_fog,
         1.0);
 }

@@ -24,7 +24,7 @@ void main()
     o_voxel = i_voxel;
     o_position.xyz = u_position + get_position(i_voxel);
     o_uv = get_uv(i_voxel);
-    vec4 position = u_view * vec4(o_position.xyz, 1.0);
+    const vec4 position = u_view * vec4(o_position.xyz, 1.0);
     o_position.w = position.z;
     gl_Position = u_proj * position;
 }

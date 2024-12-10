@@ -6,7 +6,7 @@
 #include "containers.h"
 #include "helpers.h"
 
-bool voxmesh_vbo(
+bool voxel_vbo(
     chunk_t* chunk,
     const chunk_t* neighbors[DIRECTION_3],
     const int height,
@@ -15,7 +15,7 @@ bool voxmesh_vbo(
     SDL_GPUTransferBuffer** transparent_tbo,
     uint32_t* opaque_capacity,
     uint32_t* transparent_capacity);
-bool voxmesh_ibo(
+bool voxel_ibo(
     SDL_GPUDevice* device,
     SDL_GPUBuffer** ibo,
     const uint32_t size);

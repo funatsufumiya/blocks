@@ -27,7 +27,7 @@ layout(set = 1, binding = 3) uniform t_shadow_matrix
 
 void main()
 {
-    vec3 position = u_position + get_position(i_voxel);
+    const vec3 position = u_position + get_position(i_voxel);
     o_uv = get_uv(i_voxel);
     o_shadowed = uint(get_shadowed(i_voxel));
     o_fog = get_fog(distance(position.xz, u_player_position.xz));

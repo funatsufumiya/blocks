@@ -12,7 +12,7 @@
 #include "database.h"
 #include "helpers.h"
 #include "noise.h"
-#include "voxmesh.h"
+#include "voxel.h"
 #include "world.h"
 
 typedef enum
@@ -112,7 +112,7 @@ static int loop(
             assert(!chunk->empty);
             chunk_t* neighbors[DIRECTION_3];
             get_neighbors2(x, y, z, neighbors);
-            chunk->dirty = !voxmesh_vbo(
+            chunk->dirty = !voxel_vbo(
                 chunk,
                 neighbors,
                 y,
@@ -224,23 +224,6 @@ void world_free()
         job.type = JOB_TYPE_QUIT;
         dispatch(worker, &job);
     }
-    for (int i = 0; i < WORLD_WORKERS; i++)
-    {
-        worker_t* worker = &workers[i];
-        thrd_join(worker->thrd, NULL);
-        mtx_destroy(&worker->mtx);
-        cnd_destroy(&worker->cnd);
-        if (worker->opaque_tbo)
-        {
-            SDL_ReleaseGPUTransferBuffer(device, worker->opaque_tbo);
-            worker->opaque_tbo = NULL;
-        }
-        if (worker->transparent_tbo)
-        {
-            SDL_ReleaseGPUTransferBuffer(device, worker->transparent_tbo);
-            worker->transparent_tbo = NULL;
-        }
-    }
     for (int x = 0; x < WORLD_X; x++)
     {
         for (int z = 0; z < WORLD_Z; z++)
@@ -263,13 +246,29 @@ void world_free()
         }
     }
     terrain_free(&terrain);
+    for (int i = 0; i < WORLD_WORKERS; i++)
+    {
+        worker_t* worker = &workers[i];
+        thrd_join(worker->thrd, NULL);
+        mtx_destroy(&worker->mtx);
+        cnd_destroy(&worker->cnd);
+        if (worker->opaque_tbo)
+        {
+            SDL_ReleaseGPUTransferBuffer(device, worker->opaque_tbo);
+            worker->opaque_tbo = NULL;
+        }
+        if (worker->transparent_tbo)
+        {
+            SDL_ReleaseGPUTransferBuffer(device, worker->transparent_tbo);
+            worker->transparent_tbo = NULL;
+        }
+    }
     if (ibo)
     {
         SDL_ReleaseGPUBuffer(device, ibo);
         ibo = NULL;
     }
     device = NULL;
-    ibo_size = 0;
 }
 
 static void move(
@@ -390,7 +389,7 @@ void world_update(
             ibo = NULL;
             ibo_size = 0;
         }
-        if (voxmesh_ibo(device, &ibo, size))
+        if (voxel_ibo(device, &ibo, size))
         {
             ibo_size = size;
         }

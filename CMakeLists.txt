@@ -23,7 +23,7 @@ add_executable(blocks WIN32
     src/noise.c
     src/pipeline.c
     src/raycast.c
-    src/voxmesh.c
+    src/voxel.c
     src/world.c
 )
 target_link_libraries(blocks PUBLIC SDL3::SDL3)

@@ -133,7 +133,8 @@ bool database_init(
         "    x INTEGER NOT NULL,"
         "    y INTEGER NOT NULL,"
         "    z INTEGER NOT NULL,"
-        "    data INTEGER NOT NULL"
+        "    data INTEGER NOT NULL,"
+        "    PRIMARY KEY (a, c, x, y, z)"
         ");";
     if (sqlite3_exec(handle, players_table, NULL, NULL, NULL))
     {

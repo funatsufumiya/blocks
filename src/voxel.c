@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "block.h"
 #include "helpers.h"
-#include "voxmesh.h"
+#include "voxel.h"
 #include "world.h"
 
 static uint32_t pack(
@@ -208,7 +208,7 @@ static void fill(
     }
 }
 
-bool voxmesh_vbo(
+bool voxel_vbo(
     chunk_t* chunk,
     const chunk_t* neighbors[DIRECTION_3],
     const int height,
@@ -412,7 +412,7 @@ bool voxmesh_vbo(
     return true;
 }
 
-bool voxmesh_ibo(
+bool voxel_ibo(
     SDL_GPUDevice* device,
     SDL_GPUBuffer** ibo,
     const uint32_t size)

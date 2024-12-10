@@ -37,10 +37,10 @@ void main()
         s_atlas,
         s_shadowmap,
         uv,
+        get_normal(voxel),
         shadow_position.xyz / shadow_position.w,
         u_shadow_vector,
         get_shadowed(voxel),
-        get_normal(voxel),
         get_fog(distance(position.xz, u_player_position.xz)),
         texture(s_ssao, i_uv).r);
 }

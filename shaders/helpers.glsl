@@ -106,10 +106,10 @@ vec4 get_color(
     const sampler2D atlas,
     const sampler2D shadowmap,
     const vec2 uv,
+    const vec3 normal,
     const vec3 shadow_position,
     const vec3 shadow_vector,
     const bool shadowed,
-    const vec3 normal,
     const float fog,
     const float ssao)
 {

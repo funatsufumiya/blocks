@@ -3,7 +3,7 @@
 
 #define APP_NAME "blocks"
 #define APP_WIDTH 1024
-#define APP_HEIGHT 764
+#define APP_HEIGHT 768
 #define APP_VALIDATION 1
 #define APP_ICON BLOCK_ROSE
 

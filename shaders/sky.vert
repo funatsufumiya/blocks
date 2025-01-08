@@ -18,5 +18,5 @@ void main()
     rotation[3][0] = 0.0;
     rotation[3][1] = 0.0;
     rotation[3][2] = 0.0;
-    gl_Position = u_proj  * rotation * vec4(i_position, 1.0);
+    gl_Position = u_proj * rotation * vec4(i_position, 1.0);
 }

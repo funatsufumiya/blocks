@@ -7,5 +7,8 @@ layout(location = 0) out vec4 o_color;
 
 void main()
 {
-    o_color = vec4(get_sky(i_position.y), 1.0);
+    const float dy = i_position.y;
+    const float dx = length(i_position.xz);
+    const float pitch = atan(dy, dx);
+    o_color = vec4(get_sky(pitch), 1.0);
 }

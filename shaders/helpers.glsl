@@ -87,7 +87,7 @@ bool get_shadowed(
 vec3 get_sky(
     const float y)
 {
-    return mix(vec3(0.3, 0.6, 0.9), vec3(0.8, 0.95, 1.0), max(y - 0.6, 0.0));
+    return mix(vec3(0.3, 0.6, 0.9), vec3(0.8, 0.95, 1.0), clamp(y, 0.0, 0.8));
 }
 
 float get_fog(
@@ -105,8 +105,10 @@ float get_random(
 vec4 get_color(
     const sampler2D atlas,
     const sampler2D shadowmap,
+    const vec3 position,
     const vec2 uv,
     const vec3 normal,
+    const vec3 player_position,
     const vec3 shadow_position,
     const vec3 shadow_vector,
     const bool shadowed,
@@ -135,7 +137,10 @@ vec4 get_color(
     }
     const vec4 color = texture(atlas, uv);
     const vec4 composite = vec4(color.xyz * (a + b + c + 0.3), color.a);
-    const vec4 sky = vec4(get_sky(0.0), 1.0);
+    const float dy = position.y - player_position.y;
+    const float dx = distance(position.xz, player_position.xz);
+    const float pitch = atan(dy, dx);
+    const vec4 sky = vec4(get_sky(pitch), 1.0);
     return mix(composite, sky, fog);
 }
 

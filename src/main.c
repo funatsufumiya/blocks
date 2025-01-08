@@ -489,6 +489,7 @@ static void draw_transparent()
     SDL_PushGPUVertexUniformData(commands, 2, position, 12);
     SDL_PushGPUVertexUniformData(commands, 3, shadow_camera.matrix, 64);
     SDL_PushGPUFragmentUniformData(commands, 0, vector, 12);
+    SDL_PushGPUFragmentUniformData(commands, 1, position, 12);
     SDL_BindGPUFragmentSamplers(pass, 0, tsb, 2);
     world_render(&player_camera, commands, pass, WORLD_PASS_TYPE_TRANSPARENT);
     SDL_EndGPURenderPass(pass);

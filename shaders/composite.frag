@@ -36,8 +36,10 @@ void main()
     o_color = get_color(
         s_atlas,
         s_shadowmap,
+        position,
         uv,
         get_normal(voxel),
+        u_player_position,
         shadow_position.xyz / shadow_position.w,
         u_shadow_vector,
         get_shadowed(voxel),

@@ -16,7 +16,7 @@ add_executable(blocks WIN32
     lib/stb/stb.c
     src/block.c
     src/camera.c
-    src/ds.c
+    src/chunk.c
     src/database.c
     src/helpers.c
     src/main.c

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ds.h"
+#include "chunk.h"
 
 void noise_generate(
     group_t* group,

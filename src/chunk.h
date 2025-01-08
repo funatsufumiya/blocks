@@ -8,29 +8,6 @@
 
 typedef struct
 {
-    uint8_t* data;
-    int size;
-    int stride;
-    int head;
-    int tail;
-}
-queue_t;
-
-void queue_init(
-    queue_t* queue,
-    const int size,
-    const int stride);
-void queue_free(
-    queue_t* queue);
-bool queue_append(
-    queue_t* queue,
-    const void* item);
-bool queue_remove(
-    queue_t* queue,
-    void* item);
-
-typedef struct
-{
     block_t blocks[CHUNK_X][CHUNK_Y][CHUNK_Z];
     SDL_GPUBuffer* opaque_vbo;
     SDL_GPUBuffer* transparent_vbo;

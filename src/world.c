@@ -8,7 +8,7 @@
 #include <threads.h>
 #include "block.h"
 #include "camera.h"
-#include "ds.h"
+#include "chunk.h"
 #include "database.h"
 #include "helpers.h"
 #include "noise.h"
@@ -20,6 +20,7 @@ typedef enum
     JOB_TYPE_QUIT,
     JOB_TYPE_LOAD,
     JOB_TYPE_MESH,
+    JOB_TYPE_COUNT,
 }
 job_type_t;
 

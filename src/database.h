@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 #include "block.h"
-#include "ds.h"
+#include "chunk.h"
 #include "helpers.h"
 #include "noise.h"
 

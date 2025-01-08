@@ -1,7 +1,7 @@
 #include <stb_perlin.h>
 #include <math.h>
 #include "block.h"
-#include "ds.h"
+#include "chunk.h"
 #include "helpers.h"
 #include "noise.h"
 

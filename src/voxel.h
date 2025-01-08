@@ -3,7 +3,7 @@
 #include <SDL3/SDL.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include "ds.h"
+#include "chunk.h"
 #include "helpers.h"
 
 bool voxel_vbo(

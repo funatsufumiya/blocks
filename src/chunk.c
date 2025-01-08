@@ -3,65 +3,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ds.h"
+#include "chunk.h"
 #include "helpers.h"
-
-void queue_init(
-    queue_t* queue,
-    const int size,
-    const int stride)
-{
-    assert(queue);
-    assert(size);
-    assert(stride);
-    queue->size = size + 1;
-    queue->stride = stride;
-    queue->head = 0;
-    queue->tail = 0;
-    queue->data = malloc(stride * queue->size);
-    assert(queue->data);
-}
-
-void queue_free(
-    queue_t* queue)
-{
-    assert(queue);
-    free(queue->data);
-    queue->data = NULL;
-}
-
-bool queue_append(
-    queue_t* queue,
-    const void* item)
-{
-    assert(queue);
-    assert(queue->data);
-    assert(item);
-    const int tail = (queue->tail + 1) % queue->size;
-    if (tail == queue->head)
-    {
-        return false;
-    }
-    memcpy(queue->data + queue->tail * queue->stride, item, queue->stride);
-    queue->tail = tail;
-    return true;
-}
-
-bool queue_remove(
-    queue_t* queue,
-    void* item)
-{
-    assert(queue);
-    assert(queue->data);
-    assert(item);
-    if (queue->head == queue->tail)
-    {
-        return false;
-    }
-    memcpy(item, queue->data + queue->head * queue->stride, queue->stride);
-    queue->head = (queue->head + 1) % queue->size;
-    return true;
-}
 
 void chunk_wrap(
     int* x,

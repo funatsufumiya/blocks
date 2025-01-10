@@ -13,26 +13,6 @@ const vec3 normals[6] = vec3[6]
     vec3( 0,-1, 0 )
 );
 
-const mat4 bias = mat4
-(
-    0.5,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-   -0.5,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    1.0,
-    0.0,
-    0.5,
-    0.5,
-    0.0,
-    1.0
-);
-
 vec3 get_position(
     const uint voxel)
 {
@@ -115,15 +95,19 @@ vec4 get_color(
     const float fog,
     const float ssao)
 {
+    vec3 shadow_uv;
+    shadow_uv.x = shadow_position.x * 0.5 + 0.5;
+    shadow_uv.y = 1.0 - (shadow_position.y * 0.5 + 0.5);
+    shadow_uv.z = shadow_position.z;
     float a;
     float b;
     float c;
     const float angle = dot(normal, -shadow_vector);
-    const float depth = shadow_position.z - 0.001;
+    const float depth = shadow_uv.z - 0.001;
     if (shadowed && ((angle < 0.0) || (
-        all(greaterThanEqual(shadow_position, vec3(0.0))) &&
-        all(lessThanEqual(shadow_position, vec3(1.0))) &&
-        (depth > texture(shadowmap, shadow_position.xy).x))))
+        all(greaterThanEqual(shadow_uv, vec3(0.0))) &&
+        all(lessThanEqual(shadow_uv, vec3(1.0))) &&
+        (depth > texture(shadowmap, shadow_uv.xy).x))))
     {
         a = ssao * 0.2;
         b = 0.0;

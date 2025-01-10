@@ -119,7 +119,7 @@ void noise_generate(
             }
             else if (plant > 0.52f)
             {
-                const int value = ((int) (plant * 1000.0f)) % 4;
+                const int value = max(((int) (plant * 1000.0f)) % 4, 0);
                 const block_t flowers[] =
                 {
                     BLOCK_BLUEBELL,

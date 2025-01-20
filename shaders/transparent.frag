@@ -8,9 +8,11 @@ layout(location = 2) in flat vec3 i_normal;
 layout(location = 3) in vec4 i_shadow_position;
 layout(location = 4) in flat uint i_shadowed;
 layout(location = 5) in float i_fog;
+layout(location = 6) in vec2 i_fragment;
 layout(location = 0) out vec4 o_color;
 layout(set = 2, binding = 0) uniform sampler2D s_atlas;
 layout(set = 2, binding = 1) uniform sampler2D s_shadowmap;
+layout(set = 2, binding = 2) uniform sampler2D s_position;
 layout(set = 3, binding = 0) uniform t_shadow_vector
 {
     vec3 u_shadow_vector;
@@ -33,5 +35,6 @@ void main()
         u_shadow_vector,
         bool(i_shadowed),
         i_fog,
-        1.0);
+        1.0,
+        (i_position.y - texture(s_position, i_fragment).y) / 20.0);
 }

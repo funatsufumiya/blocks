@@ -197,11 +197,11 @@ void database_set_block(
 }
 
 void database_get_blocks(
-    group_t* group,
+    chunk_t* chunk,
     const int a,
     const int c)
 {
-    assert(group);
+    assert(chunk);
     mtx_lock(&mtx);
     sqlite3_bind_int(get_blocks_stmt, 1, a);
     sqlite3_bind_int(get_blocks_stmt, 2, c);
@@ -211,7 +211,7 @@ void database_get_blocks(
         const int y = sqlite3_column_int(get_blocks_stmt, 1);
         const int z = sqlite3_column_int(get_blocks_stmt, 2);
         const block_t block = sqlite3_column_int(get_blocks_stmt, 3);
-        group_set_block(group, x, y, z, block);
+        chunk_set_block(chunk, x, y, z, block);
     }
     sqlite3_reset(get_blocks_stmt);
     mtx_unlock(&mtx);

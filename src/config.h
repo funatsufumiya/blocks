@@ -25,17 +25,11 @@
 #define SHADOW_YAW (PI / 8.0f)
 
 #define CHUNK_X 30
-#define CHUNK_Y 30
+#define CHUNK_Y 200
 #define CHUNK_Z 30
-#define GROUP_CHUNKS 7
-#define GROUP_X (CHUNK_X)
-#define GROUP_Y (CHUNK_Y * GROUP_CHUNKS)
-#define GROUP_Z (CHUNK_Z)
 #define WORLD_X 20
-#define WORLD_Y (GROUP_CHUNKS)
 #define WORLD_Z 20
-#define WORLD_GROUPS (WORLD_X * WORLD_Z)
-#define WORLD_CHUNKS (WORLD_Y * WORLD_GROUPS)
+#define WORLD_CHUNKS (WORLD_X * WORLD_Z)
 #define WORLD_WORKERS 4
 
 #define DATABASE_JOBS 100
@@ -44,7 +38,7 @@
 #define DATABASE_PLAYER 0
 
 #define VOXEL_X_BITS 5
-#define VOXEL_Y_BITS 5
+#define VOXEL_Y_BITS 8
 #define VOXEL_Z_BITS 5
 #define VOXEL_U_BITS 4
 #define VOXEL_V_BITS 4

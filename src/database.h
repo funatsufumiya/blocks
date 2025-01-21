@@ -32,6 +32,6 @@ void database_set_block(
     const int z,
     const block_t block);
 void database_get_blocks(
-    group_t* group,
+    chunk_t* chunk,
     const int a,
     const int c);

@@ -6,7 +6,7 @@
 #include "noise.h"
 
 void noise_generate(
-    group_t* group,
+    chunk_t* chunk,
     const int x,
     const int z)
 {
@@ -27,7 +27,7 @@ void noise_generate(
         height *= 50.0f;
         height = powf(fmaxf(height, 0.0f), 1.3f);
         height += 30;
-        height = clamp(height, 0, GROUP_Y - 1);
+        height = clamp(height, 0, CHUNK_Y - 1);
         if (height < 40)
         {
             const float f = stb_perlin_fbm_noise3(
@@ -78,12 +78,12 @@ void noise_generate(
         int y = 0;
         for (; y < height; y++)
         {
-            group_set_block(group, a, y, b, bottom);
+            chunk_set_block(chunk, a, y, b, bottom);
         }
-        group_set_block(group, a, y, b, top);
+        chunk_set_block(chunk, a, y, b, top);
         for (; y < 30; y++)
         {
-            group_set_block(group, a, y, b, BLOCK_WATER);
+            chunk_set_block(chunk, a, y, b, BLOCK_WATER);
         }
         if (low && grass)
         {
@@ -101,7 +101,7 @@ void noise_generate(
                 const int log = 3 + plant * 2.0f;
                 for (int dy = 0; dy < log; dy++)
                 {
-                    group_set_block(group, a, y + dy + 1, b, BLOCK_LOG);
+                    chunk_set_block(chunk, a, y + dy + 1, b, BLOCK_LOG);
                 }
                 for (int dx = -1; dx <= 1; dx++)
                 for (int dz = -1; dz <= 1; dz++)
@@ -109,13 +109,13 @@ void noise_generate(
                 {
                     if (dx != 0 || dz != 0 || dy != 0)
                     {
-                        group_set_block(group, a + dx, y + log + dy, b + dz, BLOCK_LEAVES);
+                        chunk_set_block(chunk, a + dx, y + log + dy, b + dz, BLOCK_LEAVES);
                     }
                 }
             }
             else if (plant > 0.55f)
             {
-                group_set_block(group, a, y + 1, b, BLOCK_BUSH);
+                chunk_set_block(chunk, a, y + 1, b, BLOCK_BUSH);
             }
             else if (plant > 0.52f)
             {
@@ -127,7 +127,7 @@ void noise_generate(
                     BLOCK_LAVENDER,
                     BLOCK_ROSE,
                 };
-                group_set_block(group, a, y + 1, b, flowers[value]);
+                chunk_set_block(chunk, a, y + 1, b, flowers[value]);
             }
         }
         if (height > 130)
@@ -156,7 +156,7 @@ void noise_generate(
         }
         for (int y = -scale; y <= scale; y++)
         {
-            group_set_block(group, a, 155 - y, b, BLOCK_CLOUD);
+            chunk_set_block(chunk, a, 155 - y, b, BLOCK_CLOUD);
         }
     }
 }

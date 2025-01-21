@@ -8,8 +8,7 @@
 
 bool voxel_vbo(
     chunk_t* chunk,
-    const chunk_t* neighbors[DIRECTION_3],
-    const int height,
+    const chunk_t* neighbors[DIRECTION_2],
     SDL_GPUDevice* device,
     SDL_GPUTransferBuffer** opaque_tbo,
     SDL_GPUTransferBuffer** transparent_tbo,

@@ -3,6 +3,6 @@
 #include "chunk.h"
 
 void noise_generate(
-    group_t* group,
+    chunk_t* chunk,
     const int x,
     const int z);

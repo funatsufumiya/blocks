@@ -115,8 +115,7 @@ static uint32_t pack_sprite(
 
 static void fill(
     const chunk_t* chunk,
-    const chunk_t* neighbors[DIRECTION_3],
-    const int height,
+    const chunk_t* neighbors[DIRECTION_2],
     uint32_t* opaque_data,
     uint32_t* transparent_data,
     uint32_t* opaque_size,
@@ -171,7 +170,7 @@ static void fill(
         }
         for (direction_t d = 0; d < DIRECTION_3; d++)
         {
-            if (height == 0 && y == 0 && d != DIRECTION_U)
+            if (y == 0 && d != DIRECTION_U)
             {
                 continue;
             }
@@ -183,7 +182,7 @@ static void fill(
             {
                 b = chunk->blocks[s][t][p];
             }
-            else if (neighbors[d])
+            else if (d < DIRECTION_2 && neighbors[d])
             {
                 chunk_wrap(&s, &t, &p);
                 b = neighbors[d]->blocks[s][t][p];
@@ -210,8 +209,7 @@ static void fill(
 
 bool voxel_vbo(
     chunk_t* chunk,
-    const chunk_t* neighbors[DIRECTION_3],
-    const int height,
+    const chunk_t* neighbors[DIRECTION_2],
     SDL_GPUDevice* device,
     SDL_GPUTransferBuffer** opaque_tbo,
     SDL_GPUTransferBuffer** transparent_tbo,
@@ -247,7 +245,6 @@ bool voxel_vbo(
     fill(
         chunk,
         neighbors,
-        height,
         opaque_data,
         transparent_data,
         &chunk->opaque_size,
@@ -327,7 +324,6 @@ bool voxel_vbo(
         fill(
             chunk,
             neighbors,
-            height,
             opaque_data,
             transparent_data,
             &chunk->opaque_size,

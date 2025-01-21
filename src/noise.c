@@ -64,7 +64,7 @@ void noise_generate(
                 bottom = BLOCK_DIRT;
                 grass = true;
             }
-            else if (height + biome < 116)
+            else if (height + biome < 132)
             {
                 top = BLOCK_STONE;
                 bottom = BLOCK_STONE;

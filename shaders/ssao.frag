@@ -35,7 +35,7 @@ void main()
     const uint voxel = texture(s_voxel, i_uv).x;
     const vec4 position = texture(s_position, i_uv);
     const uint direction = get_direction(voxel);
-    const vec2 size = 1.0 / textureSize(s_voxel, 0) * (1.0 / position.w) * 75;
+    const vec2 size = 1.0 / textureSize(s_voxel, 0) * (1.0 / position.w) * 75.0;
     float ssao = 0.0;
     int kernel = 2;
     for (int x = -kernel; x <= kernel; ++x)

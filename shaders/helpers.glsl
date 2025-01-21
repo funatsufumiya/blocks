@@ -67,7 +67,7 @@ bool get_shadowed(
 vec3 get_sky(
     const float y)
 {
-    return mix(vec3(0.3, 0.6, 0.9), vec3(0.8, 0.95, 1.0), clamp(y, 0.0, 0.8));
+    return mix(vec3(0.7, 0.9, 1.0), vec3(0.3, 0.6, 0.9), clamp(y, 0.0, 0.8));
 }
 
 float get_fog(

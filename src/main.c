@@ -725,9 +725,13 @@ static void move(
     y -= state[BUTTON_DOWN];
     z += state[BUTTON_FORWARD];
     z -= state[BUTTON_BACKWARD];
-    if (state[BUTTON_SPRINT])
+    if (state[BUTTON_FAST])
     {
-        speed = PLAYER_SPRINT_SPEED;
+        speed *= 5.0f;
+    }
+    else if (state[BUTTON_SLOW])
+    {
+        speed /= 5.0f;
     }
     x *= speed * dt;
     y *= speed * dt;

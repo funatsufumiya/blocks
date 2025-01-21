@@ -17,8 +17,8 @@ bool test(
     {
     case 4: return position.y < neighbor.y;
     case 5: return position.y > neighbor.y;
-    case 2: return position.x > neighbor.x;
-    case 3: return position.x < neighbor.x;
+    case 2: return position.x < neighbor.x;
+    case 3: return position.x > neighbor.x;
     case 0: return position.z < neighbor.z;
     case 1: return position.z > neighbor.z;
     }

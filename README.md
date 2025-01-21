@@ -34,3 +34,4 @@ cd bin
 - `B` to toggle blocks
 - `F11` to toggle fullscreen
 - `LControl` to move quickly
+- `LShift` to move slowly

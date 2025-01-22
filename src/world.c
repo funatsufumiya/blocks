@@ -261,7 +261,7 @@ void world_update(
             job->z = k;
             continue;
         }
-        if (!chunk->mesh || terrain_border(&terrain, j, k))
+        if (chunk->skip || !chunk->mesh || terrain_border(&terrain, j, k))
         {
             continue;
         }
@@ -279,7 +279,6 @@ void world_update(
         }
         if (status)
         {
-            static int count = 0;
             job_t* job = &jobs[n++];
             job->type = JOB_TYPE_MESH;
             job->x = j;

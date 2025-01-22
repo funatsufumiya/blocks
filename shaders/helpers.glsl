@@ -16,28 +16,22 @@ const vec3 normals[6] = vec3[6]
 vec3 get_position(
     const uint voxel)
 {
-    return vec3(
-        voxel >> VOXEL_X_OFFSET & VOXEL_X_MASK,
-        voxel >> VOXEL_Y_OFFSET & VOXEL_Y_MASK,
-        voxel >> VOXEL_Z_OFFSET & VOXEL_Z_MASK);
+    return vec3(voxel >> VOXEL_X_OFFSET & VOXEL_X_MASK,
+        voxel >> VOXEL_Y_OFFSET & VOXEL_Y_MASK, voxel >> VOXEL_Z_OFFSET & VOXEL_Z_MASK);
 }
 
 vec2 get_atlas(
     const vec2 position)
 {
-    vec2 uv;
-    uv.x = position.x / ATLAS_WIDTH * ATLAS_FACE_WIDTH;
-    uv.y = position.y / ATLAS_HEIGHT * ATLAS_FACE_HEIGHT;
-    return uv;
+    return vec2(position.x / ATLAS_WIDTH * ATLAS_FACE_WIDTH,
+        position.y / ATLAS_HEIGHT * ATLAS_FACE_HEIGHT);
 }
 
 vec2 get_uv(
     const uint voxel)
 {
-    const vec2 uv = vec2(
-        voxel >> VOXEL_U_OFFSET & VOXEL_U_MASK,
-        voxel >> VOXEL_V_OFFSET & VOXEL_V_MASK);
-    return get_atlas(uv);
+    return get_atlas(vec2(voxel >> VOXEL_U_OFFSET & VOXEL_U_MASK,
+        voxel >> VOXEL_V_OFFSET & VOXEL_V_MASK));
 }
 
 uint get_direction(
@@ -64,6 +58,12 @@ bool get_shadowed(
     return bool(voxel >> VOXEL_SHADOWED_OFFSET & VOXEL_SHADOWED_MASK);
 }
 
+float get_random(
+    const vec2 position)
+{
+    return fract(sin(dot(position, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
 vec3 get_sky(
     const float y)
 {
@@ -74,12 +74,6 @@ float get_fog(
     const float x)
 {
     return min(pow(x / 250.0, 2.5), 1.0);
-}
-
-float get_random(
-    const vec2 position)
-{
-    return fract(sin(dot(position, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
 vec4 get_color(

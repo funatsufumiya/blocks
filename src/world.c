@@ -37,10 +37,8 @@ typedef struct
     mtx_t mtx;
     cnd_t cnd;
     const job_t* job;
-    SDL_GPUTransferBuffer* opaque_tbo;
-    SDL_GPUTransferBuffer* transparent_tbo;
-    uint32_t opaque_size;
-    uint32_t transparent_size;
+    SDL_GPUTransferBuffer* tbos[CHUNK_MESH_COUNT];
+    uint32_t sizes[CHUNK_MESH_COUNT];
 }
 worker_t;
 
@@ -49,7 +47,7 @@ static SDL_GPUDevice* device;
 static SDL_GPUBuffer* ibo;
 static uint32_t ibo_size;
 static worker_t workers[WORLD_WORKERS];
-static int sort[WORLD_CHUNKS][2];
+static int sorted[WORLD_CHUNKS][2];
 
 static int loop(
     void* args)
@@ -91,10 +89,8 @@ static int loop(
                 chunk,
                 neighbors,
                 device,
-                &worker->opaque_tbo,
-                &worker->transparent_tbo,
-                &worker->opaque_size,
-                &worker->transparent_size);
+                worker->tbos,
+                worker->sizes);
             break;
         default:
             assert(0);
@@ -161,13 +157,13 @@ bool world_init(
     for (int x = 0; x < WORLD_X; x++)
     for (int z = 0; z < WORLD_Z; z++)
     {
-        sort[i][0] = x;
-        sort[i][1] = z;
+        sorted[i][0] = x;
+        sorted[i][1] = z;
         i++;
     }
     const int w = WORLD_X / 2;
     const int h = WORLD_Z / 2;
-    sort_2d(w, h, sort, WORLD_CHUNKS);
+    sort_2d(w, h, sorted, WORLD_CHUNKS);
     return true;
 }
 
@@ -182,19 +178,15 @@ void world_free()
         dispatch(worker, &job);
     }
     for (int x = 0; x < WORLD_X; x++)
+    for (int z = 0; z < WORLD_Z; z++)
     {
-        for (int z = 0; z < WORLD_Z; z++)
+        chunk_t* chunk = terrain_get(&terrain, x, z);
+        for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
         {
-            chunk_t* chunk = terrain_get(&terrain, x, z);
-            if (chunk->opaque_vbo)
+            if (chunk->vbos[mesh])
             {
-                SDL_ReleaseGPUBuffer(device, chunk->opaque_vbo);
-                chunk->opaque_vbo = NULL;
-            }
-            if (chunk->transparent_vbo)
-            {
-                SDL_ReleaseGPUBuffer(device, chunk->transparent_vbo);
-                chunk->transparent_vbo = NULL;
+                SDL_ReleaseGPUBuffer(device, chunk->vbos[mesh]);
+                chunk->vbos[mesh] = NULL;
             }
         }
     }
@@ -205,15 +197,13 @@ void world_free()
         thrd_join(worker->thrd, NULL);
         mtx_destroy(&worker->mtx);
         cnd_destroy(&worker->cnd);
-        if (worker->opaque_tbo)
+        for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
         {
-            SDL_ReleaseGPUTransferBuffer(device, worker->opaque_tbo);
-            worker->opaque_tbo = NULL;
-        }
-        if (worker->transparent_tbo)
-        {
-            SDL_ReleaseGPUTransferBuffer(device, worker->transparent_tbo);
-            worker->transparent_tbo = NULL;
+            if (worker->tbos[mesh])
+            {
+                SDL_ReleaseGPUTransferBuffer(device, worker->tbos[mesh]);
+                worker->tbos[mesh] = NULL;
+            }
         }
     }
     if (ibo)
@@ -260,8 +250,8 @@ void world_update(
     job_t jobs[WORLD_WORKERS];
     for (int i = 0; i < WORLD_CHUNKS && n < WORLD_WORKERS; i++)
     {
-        const int j = sort[i][0];
-        const int k = sort[i][1];
+        const int j = sorted[i][0];
+        const int k = sorted[i][1];
         chunk_t* chunk = terrain_get(&terrain, j, k);
         if (chunk->load)
         {
@@ -275,7 +265,7 @@ void world_update(
         {
             continue;
         }
-        bool mesh = true;
+        bool status = true;
         chunk_t* neighbors[DIRECTION_2];
         terrain_neighbors(&terrain, j, k, neighbors);
         for (direction_t direction = 0; direction < DIRECTION_2; direction++)
@@ -283,11 +273,11 @@ void world_update(
             const chunk_t* neighbor = neighbors[direction];
             if (!neighbor || neighbor->load)
             {
-                mesh = false;
+                status = false;
                 break;
             }
         }
-        if (mesh)
+        if (status)
         {
             static int count = 0;
             job_t* job = &jobs[n++];
@@ -314,7 +304,10 @@ void world_update(
             continue;
         }
         chunk_t* chunk = terrain_get(&terrain, job->x, job->z);
-        size = max3(size, chunk->opaque_size, chunk->transparent_size);
+        for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
+        {
+            size = max(size, chunk->sizes[mesh]);
+        }
     }
     if (size > ibo_size)
     {
@@ -335,7 +328,7 @@ void world_render(
     const camera_t* camera,
     SDL_GPUCommandBuffer* commands,
     SDL_GPURenderPass* pass,
-    const world_pass_type_t type)
+    const chunk_mesh_t mesh)
 {
     assert(commands);
     assert(pass);
@@ -348,38 +341,28 @@ void world_render(
     SDL_BindGPUIndexBuffer(pass, &ibb, SDL_GPU_INDEXELEMENTSIZE_32BIT);
     for (int i = 0; i < WORLD_CHUNKS; i++)
     {
-        int j;
-        if (type == WORLD_PASS_TYPE_OPAQUE)
+        int x;
+        int z;
+        if (mesh == CHUNK_MESH_OPAQUE)
         {
-            j = i;
+            x = sorted[i][0] + terrain.x;
+            z = sorted[i][1] + terrain.z;
         }
         else
         {
-            j = WORLD_CHUNKS - i - 1;
+            x = sorted[WORLD_CHUNKS - i - 1][0] + terrain.x;
+            z = sorted[WORLD_CHUNKS - i - 1][1] + terrain.z;
         }
-        int x = sort[j][0] + terrain.x;
-        int z = sort[j][1] + terrain.z;
         const chunk_t* chunk = terrain_get2(&terrain, x, z);
-        if (terrain_border2(&terrain, x, z) || chunk->skip || chunk->mesh)
+        if (terrain_border2(&terrain, x, z)) 
         {
             continue;
         }
-        SDL_GPUBuffer* vbo;
-        uint32_t size;
-        if (type == WORLD_PASS_TYPE_OPAQUE)
-        {
-            vbo = chunk->opaque_vbo;
-            size = chunk->opaque_size;
-        }
-        else
-        {
-            vbo = chunk->transparent_vbo;
-            size = chunk->transparent_size;
-        }
-        if (!size)
+        if (chunk->skip || chunk->mesh || !chunk->sizes[mesh])
         {
             continue;
         }
+        assert(chunk->sizes[mesh] <= ibo_size);
         x *= CHUNK_X;
         z *= CHUNK_Z;
         if (camera && !camera_test(camera, x, 0, z, CHUNK_X, CHUNK_Y, CHUNK_Z))
@@ -387,19 +370,19 @@ void world_render(
             continue;
         }
         int32_t position[3] = { x, 0, z };
-        SDL_PushGPUVertexUniformData(commands, 0, position, sizeof(position));
         SDL_GPUBufferBinding vbb = {0};
-        vbb.buffer = vbo;
+        vbb.buffer = chunk->vbos[mesh];
+        SDL_PushGPUVertexUniformData(commands, 0, position, sizeof(position));
         SDL_BindGPUVertexBuffers(pass, 0, &vbb, 1);
-        assert(size <= ibo_size);
-        SDL_DrawGPUIndexedPrimitives(pass, size * 6, 1, 0, 0, 0);
+        SDL_DrawGPUIndexedPrimitives(pass, chunk->sizes[mesh] * 6, 1, 0, 0, 0);
+
     }
 }
 
 void world_set_block(
-    const int x,
-    const int y,
-    const int z,
+    int x,
+    int y,
+    int z,
     const block_t block)
 {
     const int a = floor((float) x / CHUNK_X);
@@ -408,38 +391,35 @@ void world_set_block(
     {
         return;
     }
-    int d = x;
-    int w = 0;
-    int f = z;
-    chunk_wrap(&d, &w, &f);
+    chunk_wrap(&x, &y, &z);
     chunk_t* chunk = terrain_get2(&terrain, a, c);
-    database_set_block(a, c, d, y, f, block);
-    chunk_set_block(chunk, d, y, f, block);
+    database_set_block(a, c, x, y, z, block);
+    chunk_set_block(chunk, x, y, z, block);
     chunk->mesh = true;
     chunk_t* neighbors[DIRECTION_2];
     terrain_neighbors2(&terrain, a, c, neighbors);
-    if (d == 0 && neighbors[DIRECTION_W])
+    if (x == 0 && neighbors[DIRECTION_W])
     {
         neighbors[DIRECTION_W]->mesh = true;
     }
-    else if (d == CHUNK_X - 1 && neighbors[DIRECTION_E])
+    else if (x == CHUNK_X - 1 && neighbors[DIRECTION_E])
     {
         neighbors[DIRECTION_E]->mesh = true;
     }
-    if (f == 0 && neighbors[DIRECTION_S])
+    if (z == 0 && neighbors[DIRECTION_S])
     {
         neighbors[DIRECTION_S]->mesh = true;
     }
-    else if (f == CHUNK_Z - 1 && neighbors[DIRECTION_N])
+    else if (z == CHUNK_Z - 1 && neighbors[DIRECTION_N])
     {
         neighbors[DIRECTION_N]->mesh = true;
     }
 }
 
 block_t world_get_block(
-    const int x,
-    const int y,
-    const int z)
+    int x,
+    int y,
+    int z)
 {
     const int a = floor((float) x / CHUNK_X);
     const int c = floor((float) z / CHUNK_Z);
@@ -447,10 +427,14 @@ block_t world_get_block(
     {
         return BLOCK_EMPTY;
     }
-    int d = x;
-    int w = 0;
-    int f = z;
-    chunk_wrap(&d, &w, &f);
+    chunk_wrap(&x, &y, &z);
     const chunk_t* chunk = terrain_get2(&terrain, a, c);
-    return chunk_get_block(chunk, d, y, f);
+    if (!chunk->load)
+    {
+        return chunk_get_block(chunk, x, y, z);
+    }
+    else
+    {
+        return BLOCK_EMPTY;
+    }
 }

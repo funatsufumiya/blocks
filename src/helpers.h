@@ -13,7 +13,6 @@
 #define EPSILON 0.000001
 #define PI 3.14159265359
 #define max(a, b) ((a) > (b) ? (a) : (b))
-#define max3(a, b, c) (max(a, max(b, c)))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define clamp(x, a, b) min(b, max(a, x))
 #define deg(rad) ((rad) * 180.0 / PI)
@@ -43,12 +42,6 @@ extern const int directions[][3];
 
 void sort_2d(
     const int x,
-    const int z,
-    void* data,
-    const int size);
-void sort_3d(
-    const int x,
-    const int y,
     const int z,
     void* data,
     const int size);

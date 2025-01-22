@@ -10,10 +10,8 @@ bool voxel_vbo(
     chunk_t* chunk,
     const chunk_t* neighbors[DIRECTION_2],
     SDL_GPUDevice* device,
-    SDL_GPUTransferBuffer** opaque_tbo,
-    SDL_GPUTransferBuffer** transparent_tbo,
-    uint32_t* opaque_capacity,
-    uint32_t* transparent_capacity);
+    SDL_GPUTransferBuffer* tbos[CHUNK_MESH_COUNT],
+    uint32_t capacities[CHUNK_MESH_COUNT]);
 bool voxel_ibo(
     SDL_GPUDevice* device,
     SDL_GPUBuffer** ibo,

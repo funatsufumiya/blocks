@@ -35,7 +35,7 @@ static SDL_Surface* atlas_surface;
 static void* atlas_data;
 static camera_t player_camera;
 static camera_t shadow_camera;
-static block_t current_block = BLOCK_GRASS;
+static block_t selected = BLOCK_GRASS;
 static uint64_t time1;
 static uint64_t time2;
 
@@ -350,7 +350,7 @@ static void draw_shadow()
     }
     pipeline_bind(pass, PIPELINE_SHADOW);
     SDL_PushGPUVertexUniformData(commands, 1, shadow_camera.matrix, 64);
-    world_render(NULL, commands, pass, WORLD_PASS_TYPE_OPAQUE);
+    world_render(NULL, commands, pass, CHUNK_MESH_OPAQUE);
     SDL_EndGPURenderPass(pass);
 }
 
@@ -390,7 +390,7 @@ static void draw_opaque()
     SDL_BindGPUFragmentSamplers(pass, 0, &tsb, 1);
     SDL_PushGPUVertexUniformData(commands, 1, player_camera.view, 64);
     SDL_PushGPUVertexUniformData(commands, 2, player_camera.proj, 64);
-    world_render(&player_camera, commands, pass, WORLD_PASS_TYPE_OPAQUE);
+    world_render(&player_camera, commands, pass, CHUNK_MESH_OPAQUE);
     SDL_EndGPURenderPass(pass);
 }
 
@@ -493,7 +493,7 @@ static void draw_transparent()
     SDL_PushGPUFragmentUniformData(commands, 0, vector, 12);
     SDL_PushGPUFragmentUniformData(commands, 1, position, 12);
     SDL_BindGPUFragmentSamplers(pass, 0, tsb, 3);
-    world_render(&player_camera, commands, pass, WORLD_PASS_TYPE_TRANSPARENT);
+    world_render(&player_camera, commands, pass, CHUNK_MESH_TRANSPARENT);
     SDL_EndGPURenderPass(pass);
 }
 
@@ -551,7 +551,7 @@ static void draw_ui()
     pipeline_bind(pass, PIPELINE_UI);
     SDL_BindGPUFragmentSamplers(pass, 0, &tsb, 1);
     SDL_PushGPUFragmentUniformData(commands, 0, viewport, 8);
-    SDL_PushGPUFragmentUniformData(commands, 1, blocks[current_block][0], 8);
+    SDL_PushGPUFragmentUniformData(commands, 1, blocks[selected][0], 8);
     SDL_DrawGPUPrimitives(pass, 4, 1, 0, 0);
     SDL_EndGPURenderPass(pass);
 }
@@ -663,7 +663,7 @@ static bool poll()
             if (event.button.button & (BUTTON_PLACE | BUTTON_BREAK))
             {
                 bool previous = true;
-                block_t block = current_block;
+                block_t block = selected;
                 if (event.button.button == BUTTON_BREAK)
                 {
                     previous = false;
@@ -687,8 +687,8 @@ static bool poll()
             }
             else if (event.key.scancode == BUTTON_BLOCK)
             {
-                current_block = (current_block + 1) % BLOCK_COUNT;
-                current_block = clamp(current_block, BLOCK_EMPTY + 1, BLOCK_COUNT - 1);
+                selected = (selected + 1) % BLOCK_COUNT;
+                selected = clamp(selected, BLOCK_EMPTY + 1, BLOCK_COUNT - 1);
             }
             else if (event.key.scancode == BUTTON_FULLSCREEN)
             {
@@ -849,7 +849,7 @@ int main(
     int cooldown = 0;
     time1 = SDL_GetPerformanceCounter();
     time2 = 0;
-    while (1)
+    while (true)
     {
         time2 = time1;
         time1 = SDL_GetPerformanceCounter();

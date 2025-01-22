@@ -16,20 +16,16 @@ const int directions[][3] =
     [DIRECTION_D] = { 0,-1, 0 },
 };
 
-static thread_local int cx;
-static thread_local int cy;
-static thread_local int cz;
-static thread_local bool is_2d;
+static int cx;
+static int cz;
 
 static int squared(
     const int x,
-    const int y,
     const int z)
 {
     const int dx = x - cx;
-    const int dy = y - cy;
     const int dz = z - cz;
-    return dx * dx + dy * dy + dz * dz;
+    return dx * dx + dz * dz;
 }
 
 static int compare(
@@ -38,18 +34,8 @@ static int compare(
 {
     const int* l = a;
     const int* r = b;
-    int c;
-    int d;
-    if (is_2d)
-    {
-        c = squared(l[0], 0, l[1]);
-        d = squared(r[0], 0, r[1]);
-    }
-    else
-    {
-        c = squared(l[0], l[1], l[2]);
-        d = squared(r[0], r[1], r[2]);
-    }
+    const int c = squared(l[0], l[1]);
+    const int d = squared(r[0], r[1]);
     if (c < d)
     {
         return -1;
@@ -73,24 +59,6 @@ void sort_2d(
     assert(data);
     assert(size);
     cx = x;
-    cy = 0;
     cz = z;
-    is_2d = true;
     qsort(data, size, 8, compare);
-}
-
-void sort_3d(
-    const int x,
-    const int y,
-    const int z,
-    void* data,
-    const int size)
-{
-    assert(data);
-    assert(size);
-    cx = x;
-    cy = y;
-    cz = z;
-    is_2d = false;
-    qsort(data, size, 12, compare);
 }

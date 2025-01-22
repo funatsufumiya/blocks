@@ -6,15 +6,20 @@
 #include "block.h"
 #include "helpers.h"
 
+typedef enum
+{
+    CHUNK_MESH_OPAQUE,
+    CHUNK_MESH_TRANSPARENT,
+    CHUNK_MESH_COUNT,
+}
+chunk_mesh_t;
+
 typedef struct
 {
     block_t blocks[CHUNK_X][CHUNK_Y][CHUNK_Z];
-    SDL_GPUBuffer* opaque_vbo;
-    SDL_GPUBuffer* transparent_vbo;
-    uint32_t opaque_size;
-    uint32_t transparent_size;
-    uint32_t opaque_capacity;
-    uint32_t transparent_capacity;
+    SDL_GPUBuffer* vbos[CHUNK_MESH_COUNT];
+    uint32_t sizes[CHUNK_MESH_COUNT];
+    uint32_t capacities[CHUNK_MESH_COUNT];
     bool skip;
     bool load;
     bool mesh;
@@ -72,20 +77,20 @@ void terrain_neighbors(
     chunk_t* neighbors[DIRECTION_2]);
 chunk_t* terrain_get2(
     const terrain_t* terrain,
-    const int x,
-    const int z);
+    int x,
+    int z);
 bool terrain_in2(
     const terrain_t* terrain,
-    const int x,
-    const int z);
+    int x,
+    int z);
 bool terrain_border2(
     const terrain_t* terrain,
-    const int x,
-    const int z);
+    int x,
+    int z);
 void terrain_neighbors2(
     terrain_t* terrain,
-    const int x,
-    const int z,
+    int x,
+    int z,
     chunk_t* neighbors[DIRECTION_2]);
 int* terrain_move(
     terrain_t* terrain,

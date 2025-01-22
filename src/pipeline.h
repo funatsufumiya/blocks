@@ -22,5 +22,5 @@ bool pipeline_init(
     const SDL_GPUTextureFormat format);
 void pipeline_free();
 void pipeline_bind(
-    SDL_GPURenderPass* pass,
+    void* pass,
     const pipeline_t pipeline);

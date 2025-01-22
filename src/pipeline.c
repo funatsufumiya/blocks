@@ -117,8 +117,8 @@ static SDL_GPUGraphicsPipeline* load_shadow(
         },
         .depth_stencil_state =
         {
-            .enable_depth_test = 1,
-            .enable_depth_write = 1,
+            .enable_depth_test = true,
+            .enable_depth_write = true,
             .compare_op = SDL_GPU_COMPAREOP_LESS,
         },
     };
@@ -175,8 +175,8 @@ static SDL_GPUGraphicsPipeline* load_opaque(
         },
         .depth_stencil_state =
         {
-            .enable_depth_test = 1,
-            .enable_depth_write = 1,
+            .enable_depth_test = true,
+            .enable_depth_write = true,
             .compare_op = SDL_GPU_COMPAREOP_LESS,
         },
         .rasterizer_state =
@@ -505,10 +505,24 @@ void pipeline_free()
 }
 
 void pipeline_bind(
-    SDL_GPURenderPass* pass,
+    void* pass,
     const pipeline_t pipeline)
 {
     assert(pass);
     assert(pipeline < PIPELINE_COUNT);
-    SDL_BindGPUGraphicsPipeline(pass, pipelines[pipeline]);
+    switch (pipeline)
+    {
+    case PIPELINE_SKY:
+    case PIPELINE_SHADOW:
+    case PIPELINE_OPAQUE:
+    case PIPELINE_SSAO:
+    case PIPELINE_COMPOSITE:
+    case PIPELINE_TRANSPARENT:
+    case PIPELINE_RAYCAST:
+    case PIPELINE_UI:
+        SDL_BindGPUGraphicsPipeline(pass, pipelines[pipeline]);
+        break;
+    default:
+        assert(0);
+    }
 }

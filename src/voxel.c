@@ -41,7 +41,7 @@ static uint32_t pack(
     return voxel;
 }
 
-static uint32_t pack_normal(
+static uint32_t pack_non_sprite(
     const block_t block,
     const int x,
     const int y,
@@ -116,18 +116,15 @@ static uint32_t pack_sprite(
 static void fill(
     const chunk_t* chunk,
     const chunk_t* neighbors[DIRECTION_2],
-    uint32_t* opaque_data,
-    uint32_t* transparent_data,
-    uint32_t* opaque_size,
-    uint32_t* transparent_size,
-    const uint32_t opaque_capacity,
-    const uint32_t transparent_capacity)
+    uint32_t* datas[CHUNK_MESH_COUNT],
+    uint32_t sizes[CHUNK_MESH_COUNT],
+    const uint32_t capacities[CHUNK_MESH_COUNT])
 {
     assert(chunk);
-    assert(opaque_size);
-    assert(transparent_size);
-    *opaque_size = 0;
-    *transparent_size = 0;
+    for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
+    {
+        sizes[mesh] = 0;
+    }
     for (int x = 0; x < CHUNK_X; x++)
     for (int y = 0; y < CHUNK_Y; y++)
     for (int z = 0; z < CHUNK_Z; z++)
@@ -137,25 +134,19 @@ static void fill(
         {
             continue;
         }
-        uint32_t* data;
-        uint32_t* size;
-        uint32_t capacity;
+        chunk_mesh_t mesh;
         if (block_opaque(a))
         {
-            data = opaque_data;
-            size = opaque_size;
-            capacity = opaque_capacity;
+            mesh = CHUNK_MESH_OPAQUE;
         }
         else
         {
-            data = transparent_data;
-            size = transparent_size;
-            capacity = transparent_capacity;
+            mesh = CHUNK_MESH_TRANSPARENT;
         }
         if (block_sprite(a))
         {
-            *size += 4;
-            if (*size > capacity)
+            sizes[mesh] += 4;
+            if (sizes[mesh] > capacities[mesh])
             {
                 continue;
             }
@@ -163,7 +154,8 @@ static void fill(
             {
                 for (int i = 0; i < 4; i++)
                 {
-                    data[*size * 4 - 4 * (direction + 1) + i] = pack_sprite(a, x, y, z, direction, i);
+                    const int j = sizes[mesh] * 4 - 4 * (direction + 1) + i;
+                    datas[mesh][j] = pack_sprite(a, x, y, z, direction, i);
                 }            
             }
             continue;
@@ -195,13 +187,14 @@ static void fill(
             {
                 continue;
             }
-            if (++(*size) > capacity)
+            if (++sizes[mesh] > capacities[mesh])
             {
                 continue;
             }
             for (int i = 0; i < 4; i++)
             {
-                data[*size * 4 - 4 + i] = pack_normal(a, x, y, z, d, i);    
+                const int j = sizes[mesh] * 4 - 4 + i;
+                datas[mesh][j] = pack_non_sprite(a, x, y, z, d, i);    
             }
         }
     }
@@ -211,32 +204,20 @@ bool voxel_vbo(
     chunk_t* chunk,
     const chunk_t* neighbors[DIRECTION_2],
     SDL_GPUDevice* device,
-    SDL_GPUTransferBuffer** opaque_tbo,
-    SDL_GPUTransferBuffer** transparent_tbo,
-    uint32_t* opaque_capacity,
-    uint32_t* transparent_capacity)
+    SDL_GPUTransferBuffer* tbos[CHUNK_MESH_COUNT],
+    uint32_t capacities[CHUNK_MESH_COUNT])
 {
     assert(chunk);
     assert(device);
-    assert(opaque_tbo);
-    assert(transparent_tbo);
-    assert(opaque_capacity);
-    assert(transparent_capacity);
-    void* opaque_data = *opaque_tbo;
-    void* transparent_data = *transparent_tbo;
-    if (opaque_data)
+    uint32_t* datas[CHUNK_MESH_COUNT] = {0};
+    for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
     {
-        opaque_data = SDL_MapGPUTransferBuffer(device, *opaque_tbo, true);
-        if (!opaque_data)
+        if (!tbos[mesh])
         {
-            SDL_Log("Failed to map tbo buffer: %s", SDL_GetError());
-            return false;
+            continue;
         }
-    }
-    if (transparent_data)
-    {
-        transparent_data = SDL_MapGPUTransferBuffer(device, *transparent_tbo, true);
-        if (!transparent_data)
+        datas[mesh] = SDL_MapGPUTransferBuffer(device, tbos[mesh], true);
+        if (!datas[mesh])
         {
             SDL_Log("Failed to map tbo buffer: %s", SDL_GetError());
             return false;
@@ -245,77 +226,72 @@ bool voxel_vbo(
     fill(
         chunk,
         neighbors,
-        opaque_data,
-        transparent_data,
-        &chunk->opaque_size,
-        &chunk->transparent_size,
-        *opaque_capacity,
-        *transparent_capacity);
-    if (opaque_data)
+        datas,
+        chunk->sizes,
+        capacities);
+    for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
     {
-        SDL_UnmapGPUTransferBuffer(device, *opaque_tbo);
-        opaque_data = NULL;
+        if (datas[mesh])
+        {
+            SDL_UnmapGPUTransferBuffer(device, tbos[mesh]);
+            datas[mesh] = NULL;
+        }
     }
-    if (transparent_data)
+    bool status = false;
+    for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
     {
-        SDL_UnmapGPUTransferBuffer(device, *transparent_tbo);
-        transparent_data = NULL;
+        if (chunk->sizes[mesh])
+        {
+            status = true;
+            break;
+        }
     }
-    if (!chunk->opaque_size && !chunk->transparent_size)
+    if (!status)
     {
         return true;
     }
-    if (chunk->opaque_size > *opaque_capacity || chunk->transparent_size > *transparent_capacity)
+    status = false;
+    for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
     {
-        if (chunk->opaque_size > *opaque_capacity)
+        if (chunk->sizes[mesh] > capacities[mesh])
         {
-            if (*opaque_tbo)
+            status = true;
+            break;
+        }
+    }
+    if (status)
+    {
+        for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
+        {
+            if (chunk->sizes[mesh] <= capacities[mesh])
             {
-                SDL_ReleaseGPUTransferBuffer(device, *opaque_tbo);
-                *opaque_capacity = 0;
+                continue;
+            }
+            if (tbos[mesh])
+            {
+                SDL_ReleaseGPUTransferBuffer(device, tbos[mesh]);
+                tbos[mesh] = NULL;
+                capacities[mesh] = 0;
             }
             SDL_GPUTransferBufferCreateInfo tbci = {0};
             tbci.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-            tbci.size = chunk->opaque_size * 16;
-            *opaque_tbo = SDL_CreateGPUTransferBuffer(device, &tbci);
-            if (!(*opaque_tbo))
+            tbci.size = chunk->sizes[mesh] * 16;
+            tbos[mesh] = SDL_CreateGPUTransferBuffer(device, &tbci);
+            if (!tbos[mesh])
             {
                 SDL_Log("Failed to create tbo buffer: %s", SDL_GetError());
                 return false;
             }
-            *opaque_capacity = chunk->opaque_size;
+            capacities[mesh] = chunk->sizes[mesh];
         }
-        if (chunk->transparent_size > *transparent_capacity)
+        for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
         {
-            if (*transparent_tbo)
+            if (!chunk->sizes[mesh])
             {
-                SDL_ReleaseGPUTransferBuffer(device, *transparent_tbo);
-                *transparent_capacity = 0;
+                continue;
             }
-            SDL_GPUTransferBufferCreateInfo tbci = {0};
-            tbci.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-            tbci.size = chunk->transparent_size * 16;
-            *transparent_tbo = SDL_CreateGPUTransferBuffer(device, &tbci);
-            if (!(*transparent_tbo))
-            {
-                SDL_Log("Failed to create tbo buffer: %s", SDL_GetError());
-                return false;
-            }
-            *transparent_capacity = chunk->transparent_size;
-        }
-        if (chunk->opaque_size)
-        {
-            opaque_data = SDL_MapGPUTransferBuffer(device, *opaque_tbo, true);
-            if (!opaque_data)
-            {
-                SDL_Log("Failed to map tbo buffer: %s", SDL_GetError());
-                return false;
-            }
-        }
-        if (chunk->transparent_size)
-        {
-            transparent_data = SDL_MapGPUTransferBuffer(device, *transparent_tbo, true);
-            if (!transparent_data)
+            datas[mesh] = SDL_MapGPUTransferBuffer(device, tbos[mesh], true);
+            if (!datas[mesh])
             {
                 SDL_Log("Failed to map tbo buffer: %s", SDL_GetError());
                 return false;
@@ -324,56 +300,40 @@ bool voxel_vbo(
         fill(
             chunk,
             neighbors,
-            opaque_data,
-            transparent_data,
-            &chunk->opaque_size,
-            &chunk->transparent_size,
-            *opaque_capacity,
-            *transparent_capacity);
-        if (opaque_data)
+            datas,
+            chunk->sizes,
+            capacities);
+        for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
         {
-            SDL_UnmapGPUTransferBuffer(device, *opaque_tbo);
-        }
-        if (transparent_data)
-        {
-            SDL_UnmapGPUTransferBuffer(device, *transparent_tbo);
+            if (datas[mesh])
+            {
+                SDL_UnmapGPUTransferBuffer(device, tbos[mesh]);
+                datas[mesh] = NULL;
+            }
         }
     }
-    if (chunk->opaque_size > chunk->opaque_capacity)
+    for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
     {
-        if (chunk->opaque_vbo)
+        if (chunk->sizes[mesh] <= chunk->capacities[mesh])
         {
-            SDL_ReleaseGPUBuffer(device, chunk->opaque_vbo);
-            chunk->opaque_capacity = 0;
+            continue;
+        }
+        if (chunk->vbos[mesh])
+        {
+            SDL_ReleaseGPUBuffer(device, chunk->vbos[mesh]);
+            chunk->vbos[mesh] = NULL;
+            chunk->capacities[mesh] = 0;
         }
         SDL_GPUBufferCreateInfo bci = {0};
         bci.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-        bci.size = chunk->opaque_size * 16;
-        chunk->opaque_vbo = SDL_CreateGPUBuffer(device, &bci);
-        if (!chunk->opaque_vbo)
+        bci.size = chunk->sizes[mesh] * 16;
+        chunk->vbos[mesh]= SDL_CreateGPUBuffer(device, &bci);
+        if (!chunk->vbos[mesh])
         {
             SDL_Log("Failed to create vertex buffer: %s", SDL_GetError());
             return false;
         }
-        chunk->opaque_capacity = chunk->opaque_size;
-    }
-    if (chunk->transparent_size > chunk->transparent_capacity)
-    {
-        if (chunk->transparent_vbo)
-        {
-            SDL_ReleaseGPUBuffer(device, chunk->transparent_vbo);
-            chunk->transparent_capacity = 0;
-        }
-        SDL_GPUBufferCreateInfo bci = {0};
-        bci.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-        bci.size = chunk->transparent_size * 16;
-        chunk->transparent_vbo = SDL_CreateGPUBuffer(device, &bci);
-        if (!chunk->transparent_vbo)
-        {
-            SDL_Log("Failed to create vertex buffer: %s", SDL_GetError());
-            return false;
-        }
-        chunk->transparent_capacity = chunk->transparent_size;
+        chunk->capacities[mesh] = chunk->sizes[mesh];
     }
     SDL_GPUCommandBuffer* commands = SDL_AcquireGPUCommandBuffer(device);
     if (!commands)
@@ -389,18 +349,15 @@ bool voxel_vbo(
     }
     SDL_GPUTransferBufferLocation location = {0};
     SDL_GPUBufferRegion region = {0};
-    if (chunk->opaque_size)
+    for (chunk_mesh_t mesh = 0; mesh < CHUNK_MESH_COUNT; mesh++)
     {
-        location.transfer_buffer = *opaque_tbo;
-        region.size = chunk->opaque_size * 16;
-        region.buffer = chunk->opaque_vbo;
-        SDL_UploadToGPUBuffer(pass, &location, &region, 1);
-    }
-    if (chunk->transparent_size)
-    {
-        location.transfer_buffer = *transparent_tbo;
-        region.size = chunk->transparent_size * 16;
-        region.buffer = chunk->transparent_vbo;
+        if (!chunk->sizes[mesh])
+        {
+            continue;
+        }
+        location.transfer_buffer = tbos[mesh];
+        region.size = chunk->sizes[mesh] * 16;
+        region.buffer = chunk->vbos[mesh];
         SDL_UploadToGPUBuffer(pass, &location, &region, 1);
     }
     SDL_EndGPUCopyPass(pass);

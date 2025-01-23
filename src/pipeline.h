@@ -13,6 +13,7 @@ typedef enum
     PIPELINE_TRANSPARENT,
     PIPELINE_RAYCAST,
     PIPELINE_UI,
+    PIPELINE_RANDOM,
     PIPELINE_COUNT
 }
 pipeline_t;

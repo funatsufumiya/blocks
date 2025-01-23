@@ -205,7 +205,7 @@ static SDL_GPUGraphicsPipeline* load_ssao(
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
         .vertex_shader = load("fullscreen.vert", 0, 0),
-        .fragment_shader = load("ssao.frag", 0, 3),
+        .fragment_shader = load("ssao.frag", 0, 4),
         .target_info =
         {
             .num_color_targets = 1,
@@ -213,20 +213,6 @@ static SDL_GPUGraphicsPipeline* load_ssao(
             {{
                 .format = SDL_GPU_TEXTUREFORMAT_R32_FLOAT
             }}
-        },
-        .vertex_input_state =
-        {
-            .num_vertex_attributes = 1,
-            .vertex_attributes = (SDL_GPUVertexAttribute[])
-            {{
-                .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
-            }},
-            .num_vertex_buffers = 1,
-            .vertex_buffer_descriptions = (SDL_GPUVertexBufferDescription[])
-            {{
-                .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
-                .pitch = 8,
-            }},
         },
     };
     SDL_GPUGraphicsPipeline* pipeline = NULL;
@@ -256,20 +242,6 @@ static SDL_GPUGraphicsPipeline* load_composite(
             .color_target_descriptions = (SDL_GPUColorTargetDescription[])
             {{
                 .format = SDL_GPU_TEXTUREFORMAT_R32G32B32A32_FLOAT,
-            }},
-        },
-        .vertex_input_state =
-        {
-            .num_vertex_attributes = 1,
-            .vertex_attributes = (SDL_GPUVertexAttribute[])
-            {{
-                .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
-            }},
-            .num_vertex_buffers = 1,
-            .vertex_buffer_descriptions = (SDL_GPUVertexBufferDescription[])
-            {{
-                .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
-                .pitch = 8,
             }},
         },
     };
@@ -417,7 +389,7 @@ static SDL_GPUGraphicsPipeline* load_ui(
     SDL_GPUGraphicsPipelineCreateInfo info =
     {
         .vertex_shader = load("fullscreen.vert", 0, 0),
-        .fragment_shader = load("ui.frag", 2, 1),
+        .fragment_shader = load("ui.frag", 3, 1),
         .target_info =
         {
             .num_color_targets = 1,
@@ -436,18 +408,34 @@ static SDL_GPUGraphicsPipeline* load_ui(
                 },
             }},
         },
-        .vertex_input_state =
+    };
+    SDL_GPUGraphicsPipeline* pipeline = NULL;
+    if (info.vertex_shader && info.fragment_shader)
+    {
+        pipeline = SDL_CreateGPUGraphicsPipeline(device, &info);
+    }
+    if (!pipeline)
+    {
+        SDL_Log("Failed to create ui pipeline: %s", SDL_GetError());
+    }
+    SDL_ReleaseGPUShader(device, info.vertex_shader);
+    SDL_ReleaseGPUShader(device, info.fragment_shader);
+    return pipeline;
+}
+
+static SDL_GPUGraphicsPipeline* load_random(
+    const SDL_GPUTextureFormat format)
+{
+    SDL_GPUGraphicsPipelineCreateInfo info =
+    {
+        .vertex_shader = load("fullscreen.vert", 0, 0),
+        .fragment_shader = load("random.frag", 0, 0),
+        .target_info =
         {
-            .num_vertex_attributes = 1,
-            .vertex_attributes = (SDL_GPUVertexAttribute[])
+            .num_color_targets = 1,
+            .color_target_descriptions = (SDL_GPUColorTargetDescription[])
             {{
-                .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
-            }},
-            .num_vertex_buffers = 1,
-            .vertex_buffer_descriptions = (SDL_GPUVertexBufferDescription[])
-            {{
-                .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
-                .pitch = 8,
+                .format = SDL_GPU_TEXTUREFORMAT_R32_FLOAT,
             }},
         },
     };
@@ -480,6 +468,7 @@ bool pipeline_init(
     pipelines[PIPELINE_TRANSPARENT] = load_transparent(format);
     pipelines[PIPELINE_RAYCAST] = load_raycast(format);
     pipelines[PIPELINE_UI] = load_ui(format);
+    pipelines[PIPELINE_RANDOM] = load_random(format);
     for (pipeline_t pipeline = 0; pipeline < PIPELINE_COUNT; pipeline++)
     {
         if (!pipelines[pipeline])
@@ -520,6 +509,7 @@ void pipeline_bind(
     case PIPELINE_TRANSPARENT:
     case PIPELINE_RAYCAST:
     case PIPELINE_UI:
+    case PIPELINE_RANDOM:
         SDL_BindGPUGraphicsPipeline(pass, pipelines[pipeline]);
         break;
     default:

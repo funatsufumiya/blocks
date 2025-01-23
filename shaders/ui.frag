@@ -8,7 +8,11 @@ layout(set = 3, binding = 0) uniform t_viewport
 {
     ivec2 u_viewport;
 };
-layout(set = 3, binding = 1) uniform t_block
+layout(set = 3, binding = 1) uniform t_corner
+{
+    ivec2 u_corner;
+};
+layout(set = 3, binding = 2) uniform t_block
 {
     ivec2 u_block;
 };
@@ -20,13 +24,13 @@ void main()
     const vec2 ratio = vec2(u_viewport) / vec2(APP_WIDTH, APP_HEIGHT);
     const float scale = min(ratio.x, ratio.y);
     const float block_width = 50 * scale;
-    const float block_start = 10 * scale;
-    const vec2 block_end = vec2(block_start + block_width);
-    if (position.x > block_start && position.x < block_end.x &&
-        position.y > block_start && position.y < block_end.y)
+    const vec2 block_start = u_corner + 10 * scale;
+    const vec2 block_end = block_start + block_width;
+    if (position.x > block_start.x && position.x < block_end.x &&
+        position.y > block_start.y && position.y < block_end.y)
     {
-        const float x = (position.x - block_start) / block_width;
-        const float y = (position.y - block_start) / block_width;
+        const float x = (position.x - block_start.x) / block_width;
+        const float y = (position.y - block_start.y) / block_width;
         const vec2 uv = get_atlas(u_block);
         const float c = uv.x + x / ATLAS_X_FACES;
         const float d = uv.y + (1.0 - y) / ATLAS_Y_FACES;

@@ -58,12 +58,6 @@ bool get_shadowed(
     return bool(voxel >> VOXEL_SHADOWED_OFFSET & VOXEL_SHADOWED_MASK);
 }
 
-float get_random(
-    const vec2 position)
-{
-    return fract(sin(dot(position, vec2(12.9898, 78.233))) * 43758.5453);
-}
-
 vec3 get_sky(
     const float y)
 {

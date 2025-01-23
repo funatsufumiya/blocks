@@ -7,6 +7,7 @@ layout(location = 0) out float o_ssao;
 layout(set = 2, binding = 0) uniform sampler2D s_position;
 layout(set = 2, binding = 1) uniform sampler2D s_uv;
 layout(set = 2, binding = 2) uniform usampler2D s_voxel;
+layout(set = 2, binding = 3) uniform sampler2D s_random;
 
 bool test(
     const uint direction,
@@ -43,7 +44,7 @@ void main()
         for (int y = -kernel; y <= kernel; ++y)
         {
             const vec2 origin = i_uv + vec2(x, y) * size;
-            const vec2 random = origin + vec2(get_random(origin)) * 0.01;
+            const vec2 random = origin + vec2(texture(s_random, origin).x) * 0.01;
             const uint neighbor_voxel = texture(s_voxel, random).x;
             const uint neighbor_direction = get_direction(neighbor_voxel);
             const vec3 neighbor_position = texture(s_position, random).xyz;

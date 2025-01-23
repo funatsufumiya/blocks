@@ -19,6 +19,8 @@ static SDL_GPUDevice* device;
 static SDL_GPUCommandBuffer* commands;
 static uint32_t width;
 static uint32_t height;
+static uint32_t bx;
+static uint32_t by;
 static SDL_GPUBuffer* cube_vbo;
 static SDL_GPUTexture* color_texture;
 static SDL_GPUTexture* depth_texture;
@@ -27,6 +29,7 @@ static SDL_GPUTexture* position_texture;
 static SDL_GPUTexture* uv_texture;
 static SDL_GPUTexture* voxel_texture;
 static SDL_GPUTexture* ssao_texture;
+static SDL_GPUTexture* random_texture;
 static SDL_GPUTexture* atlas_texture;
 static SDL_GPUTexture* composite_texture;
 static SDL_GPUSampler* nearest_sampler;
@@ -199,6 +202,14 @@ static bool create_textures()
         return false;
     }
     tci.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER;
+    tci.format = SDL_GPU_TEXTUREFORMAT_R32_FLOAT;
+    random_texture = SDL_CreateGPUTexture(device, &tci);
+    if (!random_texture)
+    {
+        SDL_Log("Failed to create random texture: %s", SDL_GetError());
+        return false;
+    }
+    tci.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER;
     tci.format = SDL_GPU_TEXTUREFORMAT_R32G32B32A32_FLOAT;
     composite_texture = SDL_CreateGPUTexture(device, &tci);
     if (!composite_texture)
@@ -310,6 +321,31 @@ static bool create_vbos()
     return true;
 }
 
+static void draw_random()
+{
+    SDL_GPUCommandBuffer* commands = SDL_AcquireGPUCommandBuffer(device);
+    if (!commands)
+    {
+        SDL_Log("Failed to acquire command buffer: %s", SDL_GetError());
+        return;
+    }
+    SDL_GPUColorTargetInfo cti = {0};
+    cti.load_op = SDL_GPU_LOADOP_CLEAR;
+    cti.store_op = SDL_GPU_STOREOP_STORE;
+    cti.texture = random_texture;
+    SDL_GPURenderPass* pass = SDL_BeginGPURenderPass(commands, &cti, 1, NULL);
+    if (!pass)
+    {
+        SDL_Log("Failed to begin render pass: %s", SDL_GetError());
+        SDL_CancelGPUCommandBuffer(commands);
+        return;
+    }
+    pipeline_bind(pass, PIPELINE_RANDOM);
+    SDL_DrawGPUPrimitives(pass, 4, 1, 0, 0);
+    SDL_EndGPURenderPass(pass);
+    SDL_SubmitGPUCommandBuffer(commands);
+}
+
 static void draw_sky()
 {
     SDL_GPUColorTargetInfo cti = {0};
@@ -361,7 +397,6 @@ static void draw_opaque()
     cti[0].store_op = SDL_GPU_STOREOP_STORE;
     cti[0].texture = position_texture;
     cti[0].cycle = true;
-    cti[1].clear_color = (SDL_FColor) { 0.0f, 0.0f, 0.0f, 0.0f };
     cti[1].load_op = SDL_GPU_LOADOP_CLEAR;
     cti[1].store_op = SDL_GPU_STOREOP_STORE;
     cti[1].texture = uv_texture;
@@ -397,7 +432,6 @@ static void draw_opaque()
 static void draw_ssao()
 {
     SDL_GPUColorTargetInfo cti = {0};
-    cti.clear_color = (SDL_FColor) { 0.0f, 0.0f, 0.0f, 0.0f };
     cti.load_op = SDL_GPU_LOADOP_CLEAR;
     cti.store_op = SDL_GPU_STOREOP_STORE;
     cti.texture = ssao_texture;
@@ -408,15 +442,17 @@ static void draw_ssao()
         SDL_Log("Failed to begin render pass: %s", SDL_GetError());
         return;
     }
-    SDL_GPUTextureSamplerBinding tsb[3] = {0};
+    SDL_GPUTextureSamplerBinding tsb[4] = {0};
     tsb[0].sampler = nearest_sampler;
     tsb[0].texture = position_texture;
     tsb[1].sampler = nearest_sampler;
     tsb[1].texture = uv_texture;
     tsb[2].sampler = nearest_sampler;
     tsb[2].texture = voxel_texture;
+    tsb[3].sampler = nearest_sampler;
+    tsb[3].texture = random_texture;
     pipeline_bind(pass, PIPELINE_SSAO);
-    SDL_BindGPUFragmentSamplers(pass, 0, tsb, 3);
+    SDL_BindGPUFragmentSamplers(pass, 0, tsb, 4);
     SDL_DrawGPUPrimitives(pass, 4, 1, 0, 0);
     SDL_EndGPURenderPass(pass);
 }
@@ -532,30 +568,6 @@ static void draw_raycast()
     SDL_EndGPURenderPass(pass);
 }
 
-static void draw_ui()
-{
-    SDL_GPUColorTargetInfo cti = {0};
-    cti.load_op = SDL_GPU_LOADOP_LOAD;
-    cti.store_op = SDL_GPU_STOREOP_STORE;
-    cti.texture = color_texture;
-    SDL_GPURenderPass* pass = SDL_BeginGPURenderPass(commands, &cti, 1, NULL);
-    if (!pass)
-    {
-        SDL_Log("Failed to begin render pass: %s", SDL_GetError());
-        return;
-    }
-    int32_t viewport[2] = { width, height };
-    SDL_GPUTextureSamplerBinding tsb = {0};
-    tsb.sampler = nearest_sampler;
-    tsb.texture = atlas_texture;
-    pipeline_bind(pass, PIPELINE_UI);
-    SDL_BindGPUFragmentSamplers(pass, 0, &tsb, 1);
-    SDL_PushGPUFragmentUniformData(commands, 0, viewport, 8);
-    SDL_PushGPUFragmentUniformData(commands, 1, blocks[selected][0], 8);
-    SDL_DrawGPUPrimitives(pass, 4, 1, 0, 0);
-    SDL_EndGPURenderPass(pass);
-}
-
 static void blit()
 {
     const float src = (float) APP_WIDTH / (float) APP_HEIGHT;
@@ -571,22 +583,48 @@ static void blit()
     }
     const uint32_t w = APP_WIDTH * scale;
     const uint32_t h = APP_HEIGHT * scale;
-    const uint32_t x = ((float) width - (float) w) / 2.0f;
-    const uint32_t y = ((float) height - (float) h) / 2.0f;
+    bx = ((float) width - (float) w) / 2.0f;
+    by = ((float) height - (float) h) / 2.0f;
     SDL_GPUBlitInfo blit = {0};
     blit.source.x = 0;
     blit.source.y = 0;
     blit.source.w = APP_WIDTH;
     blit.source.h = APP_HEIGHT;
     blit.source.texture = composite_texture;
-    blit.destination.x = x;
-    blit.destination.y = y;
+    blit.destination.x = bx;
+    blit.destination.y = by;
     blit.destination.w = w;
     blit.destination.h = h;
     blit.destination.texture = color_texture;
     blit.load_op = SDL_GPU_LOADOP_CLEAR;
     blit.filter = SDL_GPU_FILTER_NEAREST;
     SDL_BlitGPUTexture(commands, &blit);
+}
+
+static void draw_ui()
+{
+    SDL_GPUColorTargetInfo cti = {0};
+    cti.load_op = SDL_GPU_LOADOP_LOAD;
+    cti.store_op = SDL_GPU_STOREOP_STORE;
+    cti.texture = color_texture;
+    SDL_GPURenderPass* pass = SDL_BeginGPURenderPass(commands, &cti, 1, NULL);
+    if (!pass)
+    {
+        SDL_Log("Failed to begin render pass: %s", SDL_GetError());
+        return;
+    }
+    int32_t viewport[2] = { width, height };
+    int32_t corner[2] = { bx, by };
+    SDL_GPUTextureSamplerBinding tsb = {0};
+    tsb.sampler = nearest_sampler;
+    tsb.texture = atlas_texture;
+    pipeline_bind(pass, PIPELINE_UI);
+    SDL_BindGPUFragmentSamplers(pass, 0, &tsb, 1);
+    SDL_PushGPUFragmentUniformData(commands, 0, viewport, 8);
+    SDL_PushGPUFragmentUniformData(commands, 1, corner, 8);
+    SDL_PushGPUFragmentUniformData(commands, 2, blocks[selected][0], 8);
+    SDL_DrawGPUPrimitives(pass, 4, 1, 0, 0);
+    SDL_EndGPURenderPass(pass);
 }
 
 static void draw()
@@ -846,6 +884,7 @@ int main(
     camera_init(&shadow_camera, CAMERA_TYPE_ORTHO);
     camera_set_rotation(&shadow_camera, SHADOW_PITCH, SHADOW_YAW);
     move(0.0f);
+    draw_random();
     int cooldown = 0;
     time1 = SDL_GetPerformanceCounter();
     time2 = 0;
@@ -879,6 +918,7 @@ int main(
     SDL_ReleaseGPUTexture(device, uv_texture);
     SDL_ReleaseGPUTexture(device, voxel_texture);
     SDL_ReleaseGPUTexture(device, ssao_texture);
+    SDL_ReleaseGPUTexture(device, random_texture);
     SDL_ReleaseGPUTexture(device, composite_texture);
     SDL_ReleaseGPUTexture(device, shadow_texture);
     SDL_ReleaseGPUTexture(device, atlas_texture);

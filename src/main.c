@@ -814,7 +814,11 @@ int main(
         SDL_Log("Failed to create window: %s", SDL_GetError());
         return EXIT_FAILURE;
     }
+#if defined(__APPLE__)
+    device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_MSL, APP_VALIDATION, NULL);
+#else
     device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, APP_VALIDATION, NULL);
+#endif
     if (!device)
     {
         SDL_Log("Failed to create device: %s", SDL_GetError());

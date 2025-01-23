@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdio.h>
 #include "helpers.h"
 #include "pipeline.h"
 
@@ -9,10 +10,17 @@ static SDL_GPUDevice* device;
 static SDL_GPUGraphicsPipeline* pipelines[PIPELINE_COUNT];
 
 static SDL_GPUShader* load(
-    const char* file,
+    const char* _file,
     const int uniforms,
     const int samplers)
 {
+#ifdef __APPLE__
+    char file[1024];
+    sprintf(file, "%s.msl", _file);
+#else
+    char file[1024];
+    sprintf(file, "%s.spv", _file);
+#endif
     assert(device);
     assert(file);
     SDL_GPUShaderCreateInfo info = {0};
@@ -31,8 +39,13 @@ static SDL_GPUShader* load(
     {
         info.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
     }
+#if defined(__APPLE__)
+    info.format = SDL_GPU_SHADERFORMAT_MSL;
+    info.entrypoint = "main0";
+#else
     info.format = SDL_GPU_SHADERFORMAT_SPIRV;
     info.entrypoint = "main";
+#endif
     info.num_uniform_buffers = uniforms;
     info.num_samplers = samplers;
     SDL_GPUShader* shader = SDL_CreateGPUShader(device, &info);

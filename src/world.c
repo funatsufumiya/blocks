@@ -5,7 +5,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <threads.h>
+// #include <threads.h>
+#include "tinycthread.h"
 #include "block.h"
 #include "camera.h"
 #include "chunk.h"
@@ -115,7 +116,7 @@ static void dispatch(
     mtx_unlock(&worker->mtx);
 }
 
-static void wait(
+static void wait_for_worker(
     worker_t* worker)
 {
     assert(worker);
@@ -293,7 +294,7 @@ void world_update(
     }
     for (int i = 0; i < n; i++)
     {
-        wait(&workers[i]);
+        wait_for_worker(&workers[i]);
     }
     for (int i = 0; i < n; i++)
     {

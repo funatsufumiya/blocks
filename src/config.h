@@ -32,7 +32,6 @@
 #define WORLD_CHUNKS (WORLD_X * WORLD_Z)
 #define WORLD_WORKERS 4
 
-#define DATABASE_JOBS 100
 #define DATABASE_PATH "blocks.sqlite3"
 #define DATABASE_COOLDOWN 1000
 #define DATABASE_PLAYER 0

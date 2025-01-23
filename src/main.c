@@ -38,9 +38,9 @@ static SDL_Surface* atlas_surface;
 static void* atlas_data;
 static camera_t player_camera;
 static camera_t shadow_camera;
-static block_t selected = BLOCK_GRASS;
 static uint64_t time1;
 static uint64_t time2;
+static block_t selected = BLOCK_GRASS;
 
 static bool create_atlas()
 {
